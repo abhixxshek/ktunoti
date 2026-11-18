@@ -90,54 +90,54 @@ export async function renderPosterToDataUrl(params: {
         ? outerPad + cardH - 112
         : cursorY
 
-    ctx.fillStyle = accent
-    ctx.beginPath()
-    ctx.roundRect(logoX, logoY, 54, 50, 14)
-    ctx.fill()
+    if (design.customLogo) {
+      try {
+        const logoImg = await loadImage(design.customLogo)
+        const maxLogoH = 50
+        const maxLogoW = 160
+        const aspect = logoImg.width / logoImg.height
+        let drawW = maxLogoH * aspect
+        let drawH = maxLogoH
+        if (drawW > maxLogoW) {
+          drawW = maxLogoW
+          drawH = drawW / aspect
+        }
+        ctx.drawImage(logoImg, logoX, logoY + (50 - drawH) / 2, drawW, drawH)
+      } catch {
+        ctx.fillStyle = accent
+        ctx.beginPath()
+        ctx.roundRect(logoX, logoY, 54, 50, 14)
+        ctx.fill()
 
-    ctx.fillStyle = "#FFFFFF"
-    ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
-    ctx.fillText("KTU", logoX + 7, logoY + 32)
+        ctx.fillStyle = "#FFFFFF"
+        ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
+        ctx.fillText("KTU", logoX + 7, logoY + 32)
+      }
+    } else {
+      ctx.fillStyle = accent
+      ctx.beginPath()
+      ctx.roundRect(logoX, logoY, 54, 50, 14)
+      ctx.fill()
 
-    ctx.fillStyle = template.primaryText
-    ctx.font = "700 18px Inter, sans-serif"
-    ctx.fillText("B.Tech", logoX + 66, logoY + 24)
-    ctx.fillStyle = template.secondaryText
-    ctx.font = "600 14px Inter, sans-serif"
-    ctx.fillText("Official", logoX + 66, logoY + 42)
+      ctx.fillStyle = "#FFFFFF"
+      ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
+      ctx.fillText("KTU", logoX + 7, logoY + 32)
+
+      ctx.fillStyle = template.primaryText
+      ctx.font = "700 18px Inter, sans-serif"
+      ctx.fillText("B.Tech", logoX + 66, logoY + 24)
+      ctx.fillStyle = template.secondaryText
+      ctx.font = "600 14px Inter, sans-serif"
+      ctx.fillText("Official", logoX + 66, logoY + 42)
+    }
   }
 
-  // 4. Accent Divider & Malayalam Subtitle
-  cursorY += 92
-  const alignX =
-    design.textAlign === "center"
-      ? outerPad + cardW / 2
-      : design.textAlign === "right"
-      ? contentRight
-      : contentX
+  // 4. Calculate Vertical Centering for Title Block
+  const footerY = outerPad + cardH - 42
+  const topLimitY = outerPad + 125
+  const bottomLimitY = footerY - 45
+  const availableH = bottomLimitY - topLimitY
 
-  ctx.fillStyle = accent
-  const barX =
-    design.textAlign === "center"
-      ? alignX - 44
-      : design.textAlign === "right"
-      ? contentRight - 88
-      : contentX
-  ctx.beginPath()
-  ctx.roundRect(barX, cursorY, 88, 8, 4)
-  ctx.fill()
-
-  cursorY += 44
-  ctx.textAlign = design.textAlign
-
-  if (design.malayalamSubtitle.trim()) {
-    ctx.fillStyle = accent
-    ctx.font = "700 24px 'Noto Sans Malayalam', Inter, sans-serif"
-    ctx.fillText(design.malayalamSubtitle.trim(), alignX, cursorY)
-    cursorY += 48
-  }
-
-  // 5. Adaptive Multi-Line Title
   const baseFontSize =
     formatKey === "landscape"
       ? 34
@@ -148,11 +148,58 @@ export async function renderPosterToDataUrl(params: {
       : 54
   const titleFontSize = Math.round(baseFontSize * design.fontSizeScale)
 
-  ctx.fillStyle = template.primaryText
   ctx.font = `800 ${titleFontSize}px 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif`
-
   const maxTitleLines = formatKey === "landscape" ? 3 : 5
   const titleLines = wrapCanvasText(ctx, design.title, maxTextW, maxTitleLines)
+
+  const hasSubtitle = Boolean(design.malayalamSubtitle && design.malayalamSubtitle.trim())
+  const pills: Array<{ label: string; value: string }> = []
+  if (design.semester && design.semester.trim())
+    pills.push({ label: "SEMESTER", value: design.semester.trim() })
+  if (design.officialReference && design.officialReference.trim())
+    pills.push({ label: "KTU REF", value: design.officialReference.trim() })
+
+  const contentBlockH =
+    40 +
+    (hasSubtitle ? 48 : 0) +
+    (titleLines.length * titleFontSize * 1.25) +
+    (pills.length > 0 ? 98 : 0)
+
+  // Vertically centered cursorY inside available area
+  cursorY = topLimitY + Math.max(16, Math.floor((availableH - contentBlockH) / 2))
+
+  const alignX =
+    design.textAlign === "center"
+      ? outerPad + cardW / 2
+      : design.textAlign === "right"
+      ? contentRight
+      : contentX
+
+  // Accent Divider
+  ctx.fillStyle = accent
+  const barX =
+    design.textAlign === "center"
+      ? alignX - 44
+      : design.textAlign === "right"
+      ? contentRight - 88
+      : contentX
+  ctx.beginPath()
+  ctx.roundRect(barX, cursorY, 88, 8, 4)
+  ctx.fill()
+  cursorY += 40
+
+  // Malayalam Subtitle (if any)
+  ctx.textAlign = design.textAlign
+  if (hasSubtitle) {
+    ctx.fillStyle = accent
+    ctx.font = "700 24px 'Noto Sans Malayalam', Inter, sans-serif"
+    ctx.fillText(design.malayalamSubtitle.trim(), alignX, cursorY)
+    cursorY += 48
+  }
+
+  // Adaptive Multi-Line Title
+  ctx.fillStyle = template.primaryText
+  ctx.font = `800 ${titleFontSize}px 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif`
   for (const l of titleLines) {
     ctx.fillText(l, alignX, cursorY)
     cursorY += titleFontSize * 1.25
@@ -160,12 +207,6 @@ export async function renderPosterToDataUrl(params: {
 
   // 7. Fact-Only Metadata Grid
   ctx.textAlign = "left"
-  const pills: Array<{ label: string; value: string }> = []
-  if (design.semester && design.semester.trim())
-    pills.push({ label: "SEMESTER", value: design.semester.trim() })
-  if (design.officialReference && design.officialReference.trim())
-    pills.push({ label: "KTU REF", value: design.officialReference.trim() })
-
   if (pills.length > 0) {
     cursorY += 24
     let pillX = contentX
@@ -204,7 +245,6 @@ export async function renderPosterToDataUrl(params: {
   }
 
   // 8. Official Source Footer Bar
-  const footerY = outerPad + cardH - 42
   ctx.strokeStyle = "rgba(148, 163, 184, 0.25)"
   ctx.lineWidth = 1
   ctx.beginPath()

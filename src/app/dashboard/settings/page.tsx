@@ -8,6 +8,8 @@ import {
   Bot,
   Save,
   CheckCircle2,
+  Image as ImageIcon,
+  Check,
 } from "lucide-react"
 import { TEMPLATE_LIBRARY, POSTER_FORMATS } from "@/data/templates-and-seed"
 import { PosterFormatKey } from "@/types/poster-studio"
@@ -15,12 +17,13 @@ import { PosterFormatKey } from "@/types/poster-studio"
 export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
+  const [globalLogo, setGlobalLogo] = useState<string | null>(null)
 
   const [settings, setSettings] = useState({
     organization_name: "APJ Abdul Kalam Technological University",
     channel_handle: "@KTU_Updates",
-    default_template: "minimal-academic",
-    default_format: "instagram_portrait" as PosterFormatKey,
+    default_template: "corporate-blue",
+    default_format: "square_post" as PosterFormatKey,
     brand_color: "#E94359",
     ai_provider: "gemini",
     telegram_webhook: "",
@@ -37,8 +40,34 @@ export default function SettingsPage() {
           console.error(e)
         }
       }
+      const savedLogo = localStorage.getItem("ktu_default_logo")
+      if (savedLogo) {
+        setGlobalLogo(savedLogo)
+      }
     }
   }, [])
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string
+        setGlobalLogo(result)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("ktu_default_logo", result)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleResetLogo = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("ktu_default_logo")
+      setGlobalLogo(null)
+    }
+  }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,7 +147,63 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 2. Poster Studio Defaults */}
+        {/* 2. Global University Logo (Applied to All Posters) */}
+        <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
+            <ImageIcon size={17} className="text-[#E94359]" />
+            <span>Default Logo for All Posters</span>
+          </div>
+
+          <div className="p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {globalLogo ? (
+                <img
+                  src={globalLogo}
+                  alt="Default Logo"
+                  className="h-10 w-auto max-w-[120px] object-contain rounded bg-white p-1 border border-neutral-200"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-[8px] bg-[#E94359] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                  KTU
+                </div>
+              )}
+              <div>
+                <div className="text-xs font-semibold text-[#242424]">
+                  {globalLogo ? "Custom Emblem Configured" : "Default APJ KTU Institutional Crest"}
+                </div>
+                <div className="text-[11px] text-neutral-500 mt-0.5">
+                  {globalLogo
+                    ? "This logo automatically applies to all generated posters"
+                    : "Upload your custom college or department insignia here"}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <label className="h-9 px-3.5 rounded-[8px] bg-white border border-[#E5E5E5] hover:bg-neutral-50 text-neutral-700 text-xs font-semibold cursor-pointer inline-flex items-center justify-center transition-colors shadow-xs">
+                <span>{globalLogo ? "Change" : "Upload logo"}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {globalLogo && (
+                <button
+                  type="button"
+                  onClick={handleResetLogo}
+                  className="h-9 px-3 rounded-[8px] bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Poster Studio Defaults */}
         <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
             <LayoutTemplate size={17} className="text-[#E94359]" />
@@ -169,7 +254,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 3. AI Intelligence & Automated Webhooks */}
+        {/* 4. AI Intelligence & Automated Webhooks */}
         <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
             <Bot size={17} className="text-[#E94359]" />

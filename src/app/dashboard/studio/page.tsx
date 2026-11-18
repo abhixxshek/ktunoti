@@ -1,9 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import jsPDF from "jspdf"
 import {
   Download,
   RotateCcw,
@@ -17,12 +15,8 @@ import {
   Layers,
   Type,
   Palette,
-  Sparkles,
   Sliders,
-  CheckCircle2,
   Upload,
-  FileImage,
-  X,
   Check,
   Shapes,
   Image as ImageIcon,
@@ -61,7 +55,7 @@ function resolveKtuCategoryAndTemplate(
     return { category: "Registration", templateId: "registration-reminder" }
   }
   if (titleLower.includes("circular") || catLower.includes("circular")) {
-    return { category: "Circulars", templateId: "academic-circular" }
+    return { category: "Circulars", templateId: "corporate-blue" }
   }
   if (titleLower.includes("calendar") || catLower.includes("calendar")) {
     return { category: "Academic Calendar", templateId: "minimal-academic" }
@@ -73,7 +67,8 @@ function resolveKtuCategoryAndTemplate(
     return { category: "Academic Notifications", templateId: "minimal-academic" }
   }
 
-  return { category: "Examination Notifications", templateId: "bold-exam-alert" }
+  // Default institutional template is Corporate Blue
+  return { category: "Examination Notifications", templateId: "corporate-blue" }
 }
 
 function PosterStudioInner() {
@@ -87,39 +82,61 @@ function PosterStudioInner() {
 
   const resolved = resolveKtuCategoryAndTemplate(paramCat, paramTitle)
 
+  // 1:1 Square Post as Default Format
   const [selectedFormat, setSelectedFormat] =
-    useState<PosterFormatKey>("instagram_portrait")
+    useState<PosterFormatKey>("square_post")
+
+  // Corporate Blue as Default Template
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
-    searchParams.get("template") || resolved.templateId
+    searchParams.get("template") || resolved.templateId || "corporate-blue"
   )
+
   const [zoom, setZoom] = useState<number>(1)
   const [activeTool, setActiveTool] = useState<"templates" | "text" | "elements" | "colors" | "branding">("templates")
   const [activeTab, setActiveTab] = useState<"content" | "templates" | "styling">("content")
   const [isExporting, setIsExporting] = useState<boolean>(false)
-  const [showExportModal, setShowExportModal] = useState<boolean>(false)
   const [savedStatus, setSavedStatus] = useState<boolean>(true)
+  const [globalLogoSaved, setGlobalLogoSaved] = useState<boolean>(false)
 
-  // Design state initialized from URL query parameters
-  const [design, setDesign] = useState<PosterDesignState>({
-    title: paramTitle || "APJ Abdul Kalam Technological University Announcement",
-    malayalamSubtitle: paramMalayalam,
-    description: "",
-    category: resolved.category,
-    importantDate: "",
-    deadline: "",
-    examDate: "",
-    semester: paramSem,
-    academicYear: "",
-    officialReference: paramRef,
-    sourceText: "Official Notification • ktunotes.in",
-    footerText: "APJ Abdul Kalam Technological University",
-    fontSizeScale: 1.0,
-    textAlign: "left",
-    accentColorOverride: "",
-    cardBgOverride: "",
-    customBackgroundImage: null,
-    logoPlacement: "top-right",
+  // Design state initialized from URL query parameters & localStorage
+  const [design, setDesign] = useState<PosterDesignState>(() => {
+    const savedLogo =
+      typeof window !== "undefined"
+        ? localStorage.getItem("ktu_default_logo")
+        : null
+
+    return {
+      title: paramTitle || "APJ Abdul Kalam Technological University Announcement",
+      malayalamSubtitle: paramMalayalam,
+      description: "",
+      category: resolved.category,
+      importantDate: "",
+      deadline: "",
+      examDate: "",
+      semester: paramSem,
+      academicYear: "",
+      officialReference: paramRef,
+      sourceText: "Official Notification • ktunotes.in",
+      footerText: "APJ Abdul Kalam Technological University",
+      fontSizeScale: 1.0,
+      textAlign: "left", // Left-aligned headline
+      accentColorOverride: "",
+      cardBgOverride: "",
+      customBackgroundImage: null,
+      customLogo: savedLogo,
+      logoPlacement: "top-right",
+    }
   })
+
+  // Load saved default logo on client mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedLogo = localStorage.getItem("ktu_default_logo")
+      if (savedLogo) {
+        setDesign((prev) => ({ ...prev, customLogo: savedLogo }))
+      }
+    }
+  }, [])
 
   // History stack for Undo / Redo
   const [history, setHistory] = useState<PosterDesignState[]>([design])
@@ -154,6 +171,11 @@ function PosterStudioInner() {
     if (t) {
       const c = searchParams.get("category")
       const r = resolveKtuCategoryAndTemplate(c, t)
+      const savedLogo =
+        typeof window !== "undefined"
+          ? localStorage.getItem("ktu_default_logo")
+          : null
+
       const newD: PosterDesignState = {
         title: t,
         malayalamSubtitle: searchParams.get("malayalam") || "",
@@ -168,14 +190,15 @@ function PosterStudioInner() {
         sourceText: "Official Notification • ktunotes.in",
         footerText: "APJ Abdul Kalam Technological University",
         fontSizeScale: 1.0,
-        textAlign: "left",
+        textAlign: "left", // Always left-aligned
         accentColorOverride: "",
         cardBgOverride: "",
         customBackgroundImage: null,
+        customLogo: savedLogo,
         logoPlacement: "top-right",
       }
       setDesign(newD)
-      setSelectedTemplateId(searchParams.get("template") || r.templateId)
+      setSelectedTemplateId(searchParams.get("template") || r.templateId || "corporate-blue")
       setHistory([newD])
       setHistoryIndex(0)
     }
@@ -183,6 +206,7 @@ function PosterStudioInner() {
 
   const currentTemplate =
     TEMPLATE_LIBRARY.find((t) => t.id === selectedTemplateId) ||
+    TEMPLATE_LIBRARY.find((t) => t.id === "corporate-blue") ||
     TEMPLATE_LIBRARY[0]
 
   // AI Improve Layout handler
@@ -195,18 +219,44 @@ function PosterStudioInner() {
     else if (charLen > 70) optimalScale = 0.95
     else if (charLen < 40) optimalScale = 1.15
 
-    let align: "left" | "center" = "left"
-    if (currentTemplate.id === "bold-exam-alert" || currentTemplate.id === "results-announcement") {
-      align = "center"
-    }
-
     const updated: PosterDesignState = {
       ...design,
       fontSizeScale: optimalScale,
-      textAlign: align,
-      logoPlacement: align === "center" ? "top-right" : "top-right",
+      textAlign: "left", // Left-aligned per user specification
+      logoPlacement: "top-right",
     }
     pushState(updated)
+  }
+
+  // Custom Logo Upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string
+        pushState({ ...design, customLogo: result })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Set Current Logo as Default For All Posters
+  const handleSetLogoAsDefault = () => {
+    if (typeof window !== "undefined" && design.customLogo) {
+      localStorage.setItem("ktu_default_logo", design.customLogo)
+      setGlobalLogoSaved(true)
+      setTimeout(() => setGlobalLogoSaved(false), 3000)
+    }
+  }
+
+  // Reset to default KTU crest
+  const handleResetLogo = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("ktu_default_logo")
+      pushState({ ...design, customLogo: null })
+      setGlobalLogoSaved(false)
+    }
   }
 
   // Upload Custom Texture
@@ -222,32 +272,8 @@ function PosterStudioInner() {
     }
   }
 
-  // Export handlers
-  const handleDownload = async (exportFormat: "png" | "jpeg") => {
-    setIsExporting(true)
-    try {
-      const dataUrl = await renderPosterToDataUrl({
-        template: currentTemplate,
-        formatKey: selectedFormat,
-        design,
-        exportFormat,
-      })
-
-      const link = document.createElement("a")
-      link.download = `KTU-${design.category.replace(/\s+/g, "_")}-${Date.now()}.${exportFormat}`
-      link.href = dataUrl
-      link.click()
-
-      saveToLocalLibrary(dataUrl, exportFormat)
-      setShowExportModal(false)
-    } catch (err: any) {
-      alert("Export failed: " + (err.message || "Unknown error"))
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const handleDownloadPdf = async () => {
+  // Direct PNG Export (No modal or option picker needed)
+  const handleExportPng = async () => {
     setIsExporting(true)
     try {
       const dataUrl = await renderPosterToDataUrl({
@@ -257,20 +283,14 @@ function PosterStudioInner() {
         exportFormat: "png",
       })
 
-      const spec = POSTER_FORMATS[selectedFormat]
-      const pdf = new jsPDF({
-        orientation: spec.width > spec.height ? "landscape" : "portrait",
-        unit: "px",
-        format: [spec.width, spec.height],
-      })
-
-      pdf.addImage(dataUrl, "PNG", 0, 0, spec.width, spec.height)
-      pdf.save(`KTU-${design.category.replace(/\s+/g, "_")}-${Date.now()}.pdf`)
+      const link = document.createElement("a")
+      link.download = `KTU-${design.category.replace(/\s+/g, "_")}-${Date.now()}.png`
+      link.href = dataUrl
+      link.click()
 
       saveToLocalLibrary(dataUrl, "png")
-      setShowExportModal(false)
     } catch (err: any) {
-      alert("PDF export failed: " + (err.message || "Unknown error"))
+      alert("Export failed: " + (err.message || "Unknown error"))
     } finally {
       setIsExporting(false)
     }
@@ -323,7 +343,7 @@ function PosterStudioInner() {
           </div>
         </div>
 
-        {/* Center: Format Switcher (4:5 · 9:16 · 1:1 · 16:9) */}
+        {/* Center: Format Switcher (Default: 1:1 Square) */}
         <div className="hidden md:flex items-center gap-1 h-10 p-1 rounded-[10px] bg-neutral-100 border border-neutral-200/60">
           {(Object.keys(POSTER_FORMATS) as PosterFormatKey[]).map((fKey) => {
             const spec = POSTER_FORMATS[fKey]
@@ -344,7 +364,7 @@ function PosterStudioInner() {
           })}
         </div>
 
-        {/* Right: History & Primary Export Button */}
+        {/* Right: History & Direct PNG Export Button */}
         <div className="flex items-center gap-2">
           {/* Undo / Redo */}
           <div className="flex items-center gap-1 mr-1">
@@ -368,12 +388,14 @@ function PosterStudioInner() {
             </button>
           </div>
 
+          {/* 1-Click Direct PNG Export (No modal or option picker) */}
           <button
-            onClick={() => setShowExportModal(true)}
-            className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-semibold shadow-xs transition-all active:scale-[0.98]"
+            onClick={handleExportPng}
+            disabled={isExporting}
+            className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-semibold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
           >
-            <Download size={14} />
-            <span>Export poster ↓</span>
+            <Download size={14} className={isExporting ? "animate-bounce" : ""} />
+            <span>{isExporting ? "Exporting PNG..." : "Export poster (PNG) ↓"}</span>
           </button>
         </div>
       </div>
@@ -526,13 +548,18 @@ function PosterStudioInner() {
                   </select>
                 </div>
 
-                {/* Headline Textarea */}
+                {/* Headline Textarea (Left-aligned & vertically centered in preview) */}
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    Announcement Headline
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-neutral-700">
+                      Announcement Headline
+                    </label>
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      Left-aligned · Vertically centered
+                    </span>
+                  </div>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={design.title}
                     onChange={(e) =>
                       setDesign((d) => ({ ...d, title: e.target.value }))
@@ -607,7 +634,7 @@ function PosterStudioInner() {
             {activeTab === "templates" && (
               <div className="space-y-3">
                 <div className="text-xs text-neutral-500 font-medium">
-                  11 Calibrated KTU Design Presets
+                  11 Calibrated KTU Design Presets (Default: Corporate Blue)
                 </div>
 
                 <div className="space-y-2">
@@ -656,6 +683,80 @@ function PosterStudioInner() {
             {/* 3. STYLING & BRAND TAB */}
             {activeTab === "styling" && (
               <div className="space-y-5">
+                {/* Dedicated Logo Management Section */}
+                <div className="p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#242424]">
+                        University / Channel Logo
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                        Customize the emblem displayed on the poster
+                      </p>
+                    </div>
+                    {globalLogoSaved && (
+                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                        <Check size={12} /> Set for all
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Logo Preview & Upload */}
+                  <div className="p-3 rounded-[8px] bg-white border border-[#E5E5E5] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {design.customLogo ? (
+                        <img
+                          src={design.customLogo}
+                          alt="Custom logo"
+                          className="h-9 w-auto max-w-[100px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-[8px] bg-[#E94359] text-white flex items-center justify-center font-bold text-[11px] shadow-xs shrink-0">
+                          KTU
+                        </div>
+                      )}
+                      <div className="text-xs truncate">
+                        <div className="font-semibold text-[#242424] truncate">
+                          {design.customLogo ? "Custom Uploaded Logo" : "Default KTU B.Tech Crest"}
+                        </div>
+                        <div className="text-[11px] text-neutral-400">
+                          {design.customLogo ? "Active logo" : "Standard institutional badge"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <label className="h-8 px-3 rounded-[8px] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold cursor-pointer inline-flex items-center justify-center transition-colors shrink-0">
+                      <span>Change logo</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Global Persistence Buttons */}
+                  {design.customLogo && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={handleSetLogoAsDefault}
+                        className="flex-1 h-8 px-3 rounded-[8px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] border border-[#F8C6CD] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Check size={13} />
+                        <span>Set as logo for all posters</span>
+                      </button>
+
+                      <button
+                        onClick={handleResetLogo}
+                        className="h-8 px-3 rounded-[8px] bg-neutral-200/80 hover:bg-neutral-300 text-neutral-700 text-xs font-medium transition-colors"
+                      >
+                        Reset to KTU
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Font Scaling */}
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
@@ -711,7 +812,7 @@ function PosterStudioInner() {
                 {/* Logo Placement */}
                 <div>
                   <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    KTU Crest Placement
+                    Logo Placement
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {(
@@ -739,7 +840,7 @@ function PosterStudioInner() {
                   </div>
                 </div>
 
-                {/* Custom Background Upload */}
+                {/* Custom Background Texture */}
                 <div className="pt-3 border-t border-neutral-100 space-y-2">
                   <label className="block text-xs font-semibold text-neutral-700">
                     Custom Texture / Background
@@ -773,89 +874,6 @@ function PosterStudioInner() {
           </div>
         </div>
       </div>
-
-      {/* ── EXPORT MODAL ── */}
-      {showExportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-neutral-900/40 backdrop-blur-xs"
-            onClick={() => setShowExportModal(false)}
-          />
-
-          <div className="relative z-10 w-full max-w-md bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <div>
-                <h3 className="text-base font-bold text-[#242424]">
-                  Export Poster Asset
-                </h3>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  Select your desired file format for social sharing
-                </p>
-              </div>
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="size-8 rounded-[8px] inline-flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="space-y-2.5">
-              <button
-                onClick={() => handleDownload("png")}
-                disabled={isExporting}
-                className="w-full p-3.5 rounded-[10px] border border-[#E5E5E5] hover:border-[#E94359] hover:bg-[#FDF2F4]/40 transition-all flex items-center justify-between text-left group"
-              >
-                <div>
-                  <div className="text-xs font-bold text-[#242424] group-hover:text-[#E94359]">
-                    PNG — High Quality (Recommended)
-                  </div>
-                  <div className="text-[11px] text-neutral-500 mt-0.5">
-                    Lossless crisp typography for Instagram & WhatsApp
-                  </div>
-                </div>
-                <FileImage size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
-              </button>
-
-              <button
-                onClick={() => handleDownload("jpeg")}
-                disabled={isExporting}
-                className="w-full p-3.5 rounded-[10px] border border-[#E5E5E5] hover:border-[#E94359] hover:bg-[#FDF2F4]/40 transition-all flex items-center justify-between text-left group"
-              >
-                <div>
-                  <div className="text-xs font-bold text-[#242424] group-hover:text-[#E94359]">
-                    JPEG — Optimized
-                  </div>
-                  <div className="text-[11px] text-neutral-500 mt-0.5">
-                    Small file size for fast mobile messaging
-                  </div>
-                </div>
-                <FileImage size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
-              </button>
-
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isExporting}
-                className="w-full p-3.5 rounded-[10px] border border-[#E5E5E5] hover:border-[#E94359] hover:bg-[#FDF2F4]/40 transition-all flex items-center justify-between text-left group"
-              >
-                <div>
-                  <div className="text-xs font-bold text-[#242424] group-hover:text-[#E94359]">
-                    PDF — Print Ready
-                  </div>
-                  <div className="text-[11px] text-neutral-500 mt-0.5">
-                    High resolution document for physical notice boards
-                  </div>
-                </div>
-                <Download size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
-              </button>
-            </div>
-
-            <div className="pt-2 text-center text-[11px] text-neutral-400">
-              Format: {POSTER_FORMATS[selectedFormat].label}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

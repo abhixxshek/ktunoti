@@ -101,6 +101,7 @@ export interface PosterDesignState {
   accentColorOverride: string
   cardBgOverride: string
   customBackgroundImage: string | null
+  customLogo?: string | null
   logoPlacement: LogoPlacement
   importantDate?: string
   deadline?: string

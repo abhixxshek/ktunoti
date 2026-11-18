@@ -79,25 +79,35 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
 
           {design.logoPlacement !== "hidden" &&
             design.logoPlacement !== "bottom-right" && (
-              <div className="flex items-center gap-2 shrink-0">
-                <div
-                  style={{ backgroundColor: accent }}
-                  className="w-7 h-7 rounded-lg text-white font-black text-[11px] flex items-center justify-center shadow"
-                >
-                  KTU
+              design.customLogo ? (
+                <div className="flex items-center shrink-0">
+                  <img
+                    src={design.customLogo}
+                    alt="Logo"
+                    className="h-8 max-h-8 max-w-[120px] object-contain rounded"
+                  />
                 </div>
-                <div className="text-left leading-none">
-                  <div className="text-[11px] font-extrabold">B.Tech</div>
-                  <div className="text-[9px] opacity-65 font-semibold">
-                    Official
+              ) : (
+                <div className="flex items-center gap-2 shrink-0">
+                  <div
+                    style={{ backgroundColor: accent }}
+                    className="w-7 h-7 rounded-lg text-white font-black text-[11px] flex items-center justify-center shadow"
+                  >
+                    KTU
+                  </div>
+                  <div className="text-left leading-none">
+                    <div className="text-[11px] font-extrabold">B.Tech</div>
+                    <div className="text-[9px] opacity-65 font-semibold">
+                      Official
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             )}
         </div>
 
-        {/* Center Body */}
-        <div className="my-auto py-3 space-y-2.5">
+        {/* Center Body - Vertically Centered */}
+        <div className="flex-1 flex flex-col justify-center my-auto py-4 space-y-3 text-left">
           <div
             style={{ backgroundColor: accent }}
             className={`h-1.5 w-14 rounded-full ${
