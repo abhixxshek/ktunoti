@@ -136,7 +136,7 @@ function PosterStudioInner() {
       semester: paramSem,
       academicYear: "",
       officialReference: paramRef,
-      sourceText: "Official Notification • ktunotes.in",
+      sourceText: "Official Notification",
       footerText: "APJ Abdul Kalam Technological University",
       fontSizeScale: 1.0,
       textAlign: "left", // Left-aligned headline
