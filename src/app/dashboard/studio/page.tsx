@@ -42,33 +42,27 @@ function resolveKtuCategoryAndTemplate(
   const catLower = (rawCat || "").toLowerCase()
   const titleLower = (title || "").toLowerCase()
 
+  let category: BTechCategory = "Examination Notifications"
   if (titleLower.includes("timetable") || titleLower.includes("time table")) {
-    return { category: "Time Table", templateId: "examination-timetable" }
-  }
-  if (titleLower.includes("revaluation") || titleLower.includes("answer script")) {
-    return { category: "Revaluation", templateId: "important-notification" }
-  }
-  if (titleLower.includes("result") || catLower.includes("result")) {
-    return { category: "Examination Results", templateId: "results-announcement" }
-  }
-  if (titleLower.includes("registration") || catLower.includes("registration")) {
-    return { category: "Registration", templateId: "registration-reminder" }
-  }
-  if (titleLower.includes("circular") || catLower.includes("circular")) {
-    return { category: "Circulars", templateId: "corporate-blue" }
-  }
-  if (titleLower.includes("calendar") || catLower.includes("calendar")) {
-    return { category: "Academic Calendar", templateId: "minimal-academic" }
-  }
-  if (titleLower.includes("fee") || catLower.includes("fee")) {
-    return { category: "Fee Notifications", templateId: "corporate-blue" }
-  }
-  if (catLower.includes("academic") || catLower.includes("admission")) {
-    return { category: "Academic Notifications", templateId: "minimal-academic" }
+    category = "Time Table"
+  } else if (titleLower.includes("revaluation") || titleLower.includes("answer script")) {
+    category = "Revaluation"
+  } else if (titleLower.includes("result") || catLower.includes("result")) {
+    category = "Examination Results"
+  } else if (titleLower.includes("registration") || catLower.includes("registration")) {
+    category = "Registration"
+  } else if (titleLower.includes("circular") || catLower.includes("circular")) {
+    category = "Circulars"
+  } else if (titleLower.includes("calendar") || catLower.includes("calendar")) {
+    category = "Academic Calendar"
+  } else if (titleLower.includes("fee") || catLower.includes("fee")) {
+    category = "Fee Notifications"
+  } else if (catLower.includes("academic") || catLower.includes("admission")) {
+    category = "Academic Notifications"
   }
 
-  // Default institutional template is Corporate Blue
-  return { category: "Examination Notifications", templateId: "corporate-blue" }
+  // Corporate Blue (Institutional Cobalt) is the default institutional template
+  return { category, templateId: "corporate-blue" }
 }
 
 function PosterStudioInner() {
