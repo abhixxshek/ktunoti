@@ -158,25 +158,6 @@ export async function renderPosterToDataUrl(params: {
     cursorY += titleFontSize * 1.25
   }
 
-  // 6. Extracted Description
-  if (design.description.trim()) {
-    cursorY += 12
-    const descSize = formatKey === "landscape" ? 21 : 26
-    ctx.fillStyle = template.secondaryText
-    ctx.font = `500 ${descSize}px Inter, 'Noto Sans Malayalam', sans-serif`
-    const maxDescLines = formatKey === "landscape" ? 2 : 4
-    const descLines = wrapCanvasText(
-      ctx,
-      design.description,
-      maxTextW,
-      maxDescLines
-    )
-    for (const dl of descLines) {
-      ctx.fillText(dl, alignX, cursorY)
-      cursorY += descSize * 1.45
-    }
-  }
-
   // 7. Fact-Only Metadata Grid
   ctx.textAlign = "left"
   const pills: Array<{ label: string; value: string }> = []

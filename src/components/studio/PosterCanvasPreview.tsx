@@ -127,15 +127,6 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
             {design.title}
           </h2>
 
-          {design.description && design.description.trim() && (
-            <p
-              style={{ color: template.secondaryText }}
-              className="text-xs leading-relaxed line-clamp-3 font-medium"
-            >
-              {design.description}
-            </p>
-          )}
-
           {/* Fact-Only Metadata Pills */}
           {activePills.length > 0 && (
             <div

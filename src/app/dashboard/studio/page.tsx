@@ -39,43 +39,75 @@ import {
 import { renderPosterToDataUrl } from "@/utils/canvas-exporter"
 import { PosterCanvasPreview } from "@/components/studio/PosterCanvasPreview"
 
+function resolveKtuCategoryAndTemplate(
+  rawCat?: string | null,
+  title?: string | null
+): { category: BTechCategory; templateId: string } {
+  const catLower = (rawCat || "").toLowerCase()
+  const titleLower = (title || "").toLowerCase()
+
+  if (titleLower.includes("timetable") || titleLower.includes("time table")) {
+    return { category: "Time Table", templateId: "examination-timetable" }
+  }
+  if (titleLower.includes("revaluation") || titleLower.includes("answer script")) {
+    return { category: "Revaluation", templateId: "important-notification" }
+  }
+  if (titleLower.includes("result") || catLower.includes("result")) {
+    return { category: "Examination Results", templateId: "results-announcement" }
+  }
+  if (titleLower.includes("registration") || catLower.includes("registration")) {
+    return { category: "Registration", templateId: "registration-reminder" }
+  }
+  if (titleLower.includes("circular") || catLower.includes("circular")) {
+    return { category: "Circulars", templateId: "academic-circular" }
+  }
+  if (titleLower.includes("calendar") || catLower.includes("calendar")) {
+    return { category: "Academic Calendar", templateId: "minimal-academic" }
+  }
+  if (titleLower.includes("fee") || catLower.includes("fee")) {
+    return { category: "Fee Notifications", templateId: "corporate-blue" }
+  }
+  if (catLower.includes("academic") || catLower.includes("admission")) {
+    return { category: "Academic Notifications", templateId: "minimal-academic" }
+  }
+
+  return { category: "Examination Notifications", templateId: "bold-exam-alert" }
+}
+
 function PosterStudioInner() {
   const searchParams = useSearchParams()
 
-  const initialCat = (searchParams.get("category") as BTechCategory) || "Registration"
-  const initialTplId =
-    searchParams.get("template") ||
-    CATEGORY_TEMPLATE_MAP[initialCat] ||
-    "registration-reminder"
+  const paramTitle = searchParams.get("title") || ""
+  const paramCat = searchParams.get("category")
+  const paramSem = searchParams.get("semester") || ""
+  const paramRef = searchParams.get("ref") || ""
+  const paramMalayalam = searchParams.get("malayalam") || ""
+
+  const resolved = resolveKtuCategoryAndTemplate(paramCat, paramTitle)
 
   const [selectedFormat, setSelectedFormat] =
     useState<PosterFormatKey>("instagram_portrait")
-  const [selectedTemplateId, setSelectedTemplateId] =
-    useState<string>(initialTplId)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    searchParams.get("template") || resolved.templateId
+  )
   const [zoom, setZoom] = useState<number>(1)
   const [activeTab, setActiveTab] = useState<"content" | "templates" | "styling">("content")
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [exportNotice, setExportNotice] = useState<string | null>(null)
 
-  // Design state
+  // Design state initialized from URL query parameters
   const [design, setDesign] = useState<PosterDesignState>({
-    title:
-      searchParams.get("title") ||
-      "B.Tech S6 (Regular & Supplementary) Examination May 2026 - Registration Opened",
-    malayalamSubtitle:
-      searchParams.get("malayalam") ||
-      "പരീക്ഷാ രജിസ്ട്രേഷൻ തീയതികൾ പ്രസിദ്ധീകരിച്ചു",
-    description:
-      searchParams.get("desc") ||
-      "Online course and examination registration for B.Tech Sixth Semester (2019 & 2024 Schemes) Regular and Supplementary examinations is open through the KTU e-Governance portal.",
-    category: initialCat,
+    title: paramTitle || "APJ Abdul Kalam Technological University Announcement",
+    malayalamSubtitle: paramMalayalam,
+    description: "",
+    category: resolved.category,
     importantDate: "",
     deadline: "",
     examDate: "",
-    semester: searchParams.get("semester") || "",
+    semester: paramSem,
     academicYear: "",
-    officialReference: searchParams.get("ref") || "",
-    sourceText: "Official Notification • ktu.edu.in",
+    officialReference: paramRef,
+    sourceText: "Official Notification • ktunotes.in",
     footerText: "APJ Abdul Kalam Technological University",
     fontSizeScale: 1.0,
     textAlign: "left",
@@ -84,6 +116,26 @@ function PosterStudioInner() {
     customBackgroundImage: null,
     logoPlacement: "top-right",
   })
+
+  // Sync state whenever URL searchParams change
+  useEffect(() => {
+    const currentTitle = searchParams.get("title")
+    if (currentTitle) {
+      const { category, templateId } = resolveKtuCategoryAndTemplate(
+        searchParams.get("category"),
+        currentTitle
+      )
+      setDesign((prev) => ({
+        ...prev,
+        title: currentTitle,
+        category: category,
+        semester: searchParams.get("semester") || "",
+        officialReference: searchParams.get("ref") || "",
+        malayalamSubtitle: searchParams.get("malayalam") || "",
+      }))
+      setSelectedTemplateId(searchParams.get("template") || templateId)
+    }
+  }, [searchParams])
 
   // Selected template object
   const currentTemplate =
@@ -404,22 +456,6 @@ function PosterStudioInner() {
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs font-medium focus:outline-none focus:border-[#FF3355]"
                     placeholder="മലയാളം അടിക്കുറിപ്പ്..."
-                  />
-                </div>
-
-                {/* Extracted Description */}
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Summary Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={design.description}
-                    onChange={(e) =>
-                      setDesign((d) => ({ ...d, description: e.target.value }))
-                    }
-                    className="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs leading-relaxed focus:outline-none focus:border-[#FF3355]"
-                    placeholder="Brief summary..."
                   />
                 </div>
 
