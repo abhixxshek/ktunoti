@@ -359,6 +359,18 @@ function DashboardFeedContent() {
                     const isSelected = selectedIds.has(item.source_id)
                     const category = item.category || "Exam"
                     const dateStr = item.published_date || "Recent"
+                    const isReg =
+                      /registration/i.test(item.title) ||
+                      category.toLowerCase() === "registration"
+                    let withoutFineParam = ""
+                    if (isReg) {
+                      const match = `${item.description || ""} ${item.title}`.match(
+                        /(?:without\s+fine|w\/o\s+fine|without\s+late\s+fee|registration\s+without\s+fine)[\s:\-–—to]*([0-9]{1,2}[\/\-\.][0-9]{1,2}[\/\-\.][0-9]{2,4}|[0-9]{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s,]+[0-9]{2,4})/i
+                      )
+                      if (match && match[1]) {
+                        withoutFineParam = match[1].trim()
+                      }
+                    }
 
                     return (
                       <div
@@ -435,7 +447,11 @@ function DashboardFeedContent() {
                           <Link
                             href={`/dashboard/studio?title=${encodeURIComponent(
                               item.title
-                            )}&category=${encodeURIComponent(category)}`}
+                            )}&category=${encodeURIComponent(category)}${
+                              withoutFineParam
+                                ? `&withoutFine=${encodeURIComponent(withoutFineParam)}`
+                                : ""
+                            }`}
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-[10px] bg-neutral-50 hover:bg-[#E94359] text-neutral-700 hover:text-white border border-[#E5E5E5] hover:border-[#E94359] text-xs font-semibold transition-all group/btn shadow-xs active:scale-[0.98]"
                           >
                             <span>Design poster</span>

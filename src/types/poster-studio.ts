@@ -103,6 +103,7 @@ export interface PosterDesignState {
   customBackgroundImage: string | null
   customLogo?: string | null
   logoPlacement: LogoPlacement
+  withoutFineDate?: string
   importantDate?: string
   deadline?: string
   examDate?: string

@@ -40,9 +40,17 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
       ? "text-base sm:text-lg md:text-xl leading-snug"
       : "text-lg sm:text-xl md:text-2xl leading-tight"
 
+  const isRegistration =
+    design.category === "Registration" ||
+    /registration/i.test(design.title) ||
+    /registration/i.test(design.category)
+
   const activePills = [
     { label: "SEMESTER", value: design.semester, urgent: false },
     { label: "KTU REF", value: design.officialReference, urgent: false },
+    ...(isRegistration && design.withoutFineDate && design.withoutFineDate.trim().length > 0
+      ? [{ label: "WITHOUT FINE", value: design.withoutFineDate.trim(), urgent: true }]
+      : []),
   ].filter((p) => p.value && p.value.trim().length > 0)
 
   return (
@@ -67,7 +75,7 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
       >
         {/* Top Header */}
         <div
-          className={`flex items-center justify-between gap-2 ${
+          className={`flex items-start justify-between gap-3 ${
             design.logoPlacement === "top-left" ? "flex-row-reverse" : "flex-row"
           }`}
         >
@@ -76,7 +84,7 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
               backgroundColor: template.badgeBg,
               color: template.badgeText,
             }}
-            className="px-3.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider truncate max-w-[70%]"
+            className="px-3.5 py-1.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider truncate max-w-[55%] mt-1 shrink-0"
           >
             {design.category}
           </span>
@@ -88,7 +96,7 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
                   <img
                     src={activeLogo}
                     alt="Logo"
-                    className="h-10 max-h-10 w-auto max-w-[130px] object-contain rounded"
+                    className="h-16 sm:h-20 md:h-24 max-h-24 w-auto max-w-[130px] sm:max-w-[170px] object-contain rounded drop-shadow-sm transition-all"
                   />
                 </div>
               ) : null
@@ -140,17 +148,25 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
               {activePills.map((pill) => (
                 <div
                   key={pill.label}
-                  style={{ borderLeftColor: accent }}
-                  className={`px-2.5 py-1.5 rounded-lg border-l-4 text-left ${
+                  style={{ borderLeftColor: pill.urgent ? "#E94359" : accent }}
+                  className={`px-2.5 py-1.5 rounded-lg border-l-4 text-left transition-all ${
                     pill.urgent
-                      ? "bg-amber-500/15"
+                      ? "bg-rose-500/20 ring-1 ring-rose-500/30"
                       : "bg-slate-500/10"
                   }`}
                 >
-                  <div className="text-[8px] font-bold uppercase tracking-wider opacity-65">
+                  <div
+                    className={`text-[8px] font-extrabold uppercase tracking-wider ${
+                      pill.urgent ? "text-[#E94359]" : "opacity-65"
+                    }`}
+                  >
                     {pill.label}
                   </div>
-                  <div className="text-[11px] font-extrabold leading-tight mt-0.5">
+                  <div
+                    className={`text-[11px] font-extrabold leading-tight mt-0.5 ${
+                      pill.urgent ? "text-rose-100" : ""
+                    }`}
+                  >
                     {pill.value}
                   </div>
                 </div>

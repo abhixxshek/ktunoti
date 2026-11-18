@@ -88,17 +88,15 @@ export async function renderPosterToDataUrl(params: {
       : "/logo.png"
 
   if (design.logoPlacement !== "hidden" && activeLogo) {
-    const logoX =
-      design.logoPlacement === "top-left" ? contentX : contentRight - 170
     const logoY =
       design.logoPlacement === "bottom-right"
-        ? outerPad + cardH - 112
+        ? outerPad + cardH - 140
         : cursorY
 
     try {
       const logoImg = await loadImage(activeLogo)
-      const maxLogoH = 54
-      const maxLogoW = 160
+      const maxLogoH = 110
+      const maxLogoW = 200
       const aspect = logoImg.width / logoImg.height
       let drawW = maxLogoH * aspect
       let drawH = maxLogoH
@@ -106,22 +104,31 @@ export async function renderPosterToDataUrl(params: {
         drawW = maxLogoW
         drawH = drawW / aspect
       }
-      ctx.drawImage(logoImg, logoX, logoY + (54 - drawH) / 2, drawW, drawH)
+      const logoX =
+        design.logoPlacement === "top-left"
+          ? contentX
+          : contentRight - drawW
+
+      ctx.drawImage(logoImg, logoX, logoY, drawW, drawH)
     } catch {
+      const logoX =
+        design.logoPlacement === "top-left"
+          ? contentX
+          : contentRight - 90
       ctx.fillStyle = accent
       ctx.beginPath()
-      ctx.roundRect(logoX, logoY, 54, 50, 14)
+      ctx.roundRect(logoX, logoY, 90, 80, 16)
       ctx.fill()
 
       ctx.fillStyle = "#FFFFFF"
-      ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
-      ctx.fillText("KTU", logoX + 7, logoY + 32)
+      ctx.font = "800 24px 'Plus Jakarta Sans', sans-serif"
+      ctx.fillText("KTU", logoX + 18, logoY + 48)
     }
   }
 
   // 4. Calculate Vertical Centering for Title Block
   const footerY = outerPad + cardH - 42
-  const topLimitY = outerPad + 125
+  const topLimitY = outerPad + 185
   const bottomLimitY = footerY - 45
   const availableH = bottomLimitY - topLimitY
 
@@ -140,11 +147,18 @@ export async function renderPosterToDataUrl(params: {
   const titleLines = wrapCanvasText(ctx, design.title, maxTextW, maxTitleLines)
 
   const hasSubtitle = Boolean(design.malayalamSubtitle && design.malayalamSubtitle.trim())
-  const pills: Array<{ label: string; value: string }> = []
+  const isRegistration =
+    design.category === "Registration" ||
+    /registration/i.test(design.title) ||
+    /registration/i.test(design.category)
+
+  const pills: Array<{ label: string; value: string; urgent?: boolean }> = []
   if (design.semester && design.semester.trim())
-    pills.push({ label: "SEMESTER", value: design.semester.trim() })
+    pills.push({ label: "SEMESTER", value: design.semester.trim(), urgent: false })
   if (design.officialReference && design.officialReference.trim())
-    pills.push({ label: "KTU REF", value: design.officialReference.trim() })
+    pills.push({ label: "KTU REF", value: design.officialReference.trim(), urgent: false })
+  if (isRegistration && design.withoutFineDate && design.withoutFineDate.trim())
+    pills.push({ label: "WITHOUT FINE", value: design.withoutFineDate.trim(), urgent: true })
 
   const contentBlockH =
     40 +
@@ -208,18 +222,18 @@ export async function renderPosterToDataUrl(params: {
       }
 
       if (cursorY + 80 < outerPad + cardH - 70) {
-        ctx.fillStyle = "rgba(148, 163, 184, 0.14)"
+        ctx.fillStyle = pill.urgent ? "rgba(233, 67, 89, 0.22)" : "rgba(148, 163, 184, 0.14)"
         ctx.beginPath()
         ctx.roundRect(pillX, cursorY, pillW, 74, 16)
         ctx.fill()
 
-        ctx.fillStyle = accent
+        ctx.fillStyle = pill.urgent ? "#E94359" : accent
         ctx.beginPath()
         ctx.roundRect(pillX, cursorY, 6, 74, 3)
         ctx.fill()
 
-        ctx.fillStyle = template.secondaryText
-        ctx.font = "700 13px Inter, sans-serif"
+        ctx.fillStyle = pill.urgent ? "#E94359" : template.secondaryText
+        ctx.font = pill.urgent ? "800 13px Inter, sans-serif" : "700 13px Inter, sans-serif"
         ctx.fillText(pill.label, pillX + 20, cursorY + 26)
 
         ctx.fillStyle = template.primaryText

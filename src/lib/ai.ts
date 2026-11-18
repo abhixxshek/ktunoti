@@ -10,9 +10,12 @@ CRITICAL RULES:
 1. Return strictly valid JSON matching the exact schema below.
 2. NEVER invent dates, course names, or deadlines not mentioned in the text.
 3. If important dates or deadlines are not explicitly provided, leave them as empty array [] or empty string "".
-4. If dates or requirements are ambiguous or need human confirmation, set "requires_review": true.
-5. Provide maximum 3 short, actionable bullet points for "instructions".
-6. Keep "main_title" clean, punchy and optimized for a poster header (e.g., "B.Tech S6 Exam Timetable Published").
+4. EXAM REGISTRATION ACCURACY RULE:
+   - For Exam Registration notices ONLY: if an exact date for registration "without fine" (or "without late fee") is explicitly and accurately mentioned in the notification/PDF text, extract it into "without_fine_date".
+   - If the notice is NOT for exam registration, or if the "without fine" date is not explicitly and accurately found, leave "without_fine_date": "". NEVER invent or assume a date.
+5. If dates or requirements are ambiguous or need human confirmation, set "requires_review": true.
+6. Provide maximum 3 short, actionable bullet points for "instructions".
+7. Keep "main_title" clean, punchy and optimized for a poster header (e.g., "B.Tech S6 Exam Registration").
 
 JSON SCHEMA:
 {
@@ -22,6 +25,7 @@ JSON SCHEMA:
   "semester": "string",
   "important_dates": ["string"],
   "deadlines": "string",
+  "without_fine_date": "string",
   "instructions": ["string"],
   "requires_review": boolean
 }
@@ -98,6 +102,7 @@ function validateAndCleanExtractedData(
     semester: data.semester || "All Semesters",
     important_dates: Array.isArray(data.important_dates) ? data.important_dates : [],
     deadlines: data.deadlines || "",
+    without_fine_date: data.without_fine_date || "",
     instructions: Array.isArray(data.instructions) ? data.instructions.slice(0, 3) : [],
     requires_review: Boolean(data.requires_review),
   }
@@ -137,6 +142,21 @@ function heuristicExtract(title: string, content: string): AIExtractionData {
     deadlines = matchedDates[matchedDates.length - 1]
   }
 
+  // Without Fine date: ONLY for exam registration if explicitly present
+  let withoutFineDate = ""
+  const isExamRegistration =
+    /registration/i.test(title) ||
+    /exam.*registration|registration.*exam/i.test(text)
+
+  if (isExamRegistration) {
+    const withoutFineMatch = `${content} ${title}`.match(
+      /(?:without\s+fine|w\/o\s+fine|without\s+late\s+fee|normal\s+fee)[\s:\-–—to]*([0-9]{1,2}[\/\-\.][0-9]{1,2}[\/\-\.][0-9]{2,4}|[0-9]{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s,]+[0-9]{2,4})/i
+    )
+    if (withoutFineMatch && withoutFineMatch[1]) {
+      withoutFineDate = withoutFineMatch[1].trim()
+    }
+  }
+
   return {
     main_title: title.replace(/published|circular|notification/gi, "").trim() || title,
     university: "APJ Abdul Kalam Technological University",
@@ -144,6 +164,7 @@ function heuristicExtract(title: string, content: string): AIExtractionData {
     semester: semester,
     important_dates: Array.from(new Set(matchedDates)).slice(0, 3),
     deadlines: deadlines,
+    without_fine_date: withoutFineDate,
     instructions: [
       "Check university portal for candidate-specific details",
       "Verify registration status with department coordinator",

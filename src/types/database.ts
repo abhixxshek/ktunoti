@@ -33,6 +33,7 @@ export interface AIExtractionData {
   semester: string
   important_dates: string[]
   deadlines: string
+  without_fine_date?: string
   instructions: string[]
   requires_review: boolean
 }

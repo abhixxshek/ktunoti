@@ -143,13 +143,14 @@ function NotificationDetailContent({ params }: Props) {
     const cat = aiData.department_or_course || "Academic Notifications"
     const sem = aiData.semester || ""
     const deadline = aiData.deadlines || ""
+    const withoutFine = aiData.without_fine_date || ""
     const title = aiData.main_title || (notification ? notification.title : "")
     router.push(
       `/dashboard/studio?notificationId=${resolvedParams.id}&title=${encodeURIComponent(
         title
       )}&category=${encodeURIComponent(cat)}&semester=${encodeURIComponent(
         sem
-      )}&deadline=${encodeURIComponent(deadline)}`
+      )}&deadline=${encodeURIComponent(deadline)}&withoutFine=${encodeURIComponent(withoutFine)}`
     )
   }
 
@@ -377,6 +378,35 @@ function NotificationDetailContent({ params }: Props) {
                   className="w-full h-10 px-3.5 text-[13px] text-[#242424] bg-neutral-50 focus:bg-white border border-[#E5E5E5] focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 rounded-[10px] focus:outline-none transition-all"
                 />
               </div>
+
+              {/* Without Fine Date (Strictly for Exam Registration) */}
+              {(/registration/i.test(notification?.title || "") ||
+                /registration/i.test(aiData.main_title) ||
+                Boolean(aiData.without_fine_date)) && (
+                <div className="p-3.5 rounded-[10px] bg-amber-50/70 border border-amber-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Registration Without Fine (Date)
+                    </label>
+                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                      Accurate PDF Only
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={aiData.without_fine_date || ""}
+                    onChange={(e) =>
+                      setAiData({ ...aiData, without_fine_date: e.target.value })
+                    }
+                    placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
+                    className="w-full h-10 px-3.5 text-[13px] text-[#242424] bg-white border border-amber-200 focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 rounded-[8px] focus:outline-none transition-all"
+                  />
+                  <p className="text-[11px] text-amber-800/80">
+                    Extracted only for exam registration if explicitly present in the notification / PDF.
+                  </p>
+                </div>
+              )}
 
               {/* Action Button */}
               <div className="pt-4 border-t border-neutral-100 flex justify-end">

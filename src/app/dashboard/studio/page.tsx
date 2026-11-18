@@ -77,6 +77,11 @@ function PosterStudioInner() {
   const paramSem = searchParams.get("semester") || ""
   const paramRef = searchParams.get("ref") || ""
   const paramMalayalam = searchParams.get("malayalam") || ""
+  const paramWithoutFine =
+    searchParams.get("withoutFine") ||
+    searchParams.get("without_fine") ||
+    searchParams.get("withoutFineDate") ||
+    ""
 
   const resolved = resolveKtuCategoryAndTemplate(paramCat, paramTitle)
 
@@ -109,6 +114,7 @@ function PosterStudioInner() {
       malayalamSubtitle: paramMalayalam,
       description: "",
       category: resolved.category,
+      withoutFineDate: paramWithoutFine || "",
       importantDate: "",
       deadline: "",
       examDate: "",
@@ -166,8 +172,12 @@ function PosterStudioInner() {
     const r = searchParams.get("ref")
     const m = searchParams.get("malayalam")
     const tpl = searchParams.get("template")
+    const wf =
+      searchParams.get("withoutFine") ||
+      searchParams.get("without_fine") ||
+      searchParams.get("withoutFineDate")
 
-    if (t || c || s || r || m || tpl) {
+    if (t || c || s || r || m || tpl || wf) {
       const res = resolveKtuCategoryAndTemplate(c, t)
       setDesign((prev) => ({
         ...prev,
@@ -176,6 +186,7 @@ function PosterStudioInner() {
         semester: s || prev.semester,
         officialReference: r || prev.officialReference,
         malayalamSubtitle: m || prev.malayalamSubtitle,
+        withoutFineDate: wf !== null && wf !== undefined ? wf : prev.withoutFineDate,
       }))
       if (tpl) setSelectedTemplateId(tpl)
     }
@@ -417,6 +428,40 @@ function PosterStudioInner() {
               />
             </div>
           </div>
+
+          {/* Registration Without Fine Date (Strictly for Exam Registration) */}
+          {(design.category === "Registration" ||
+            /registration/i.test(design.title) ||
+            /registration/i.test(design.category) ||
+            Boolean(design.withoutFineDate)) && (
+            <div className="p-3.5 rounded-[10px] bg-rose-50/70 border border-rose-200/80 space-y-2 mt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#E94359]" />
+                  Registration Without Fine (Date)
+                </label>
+                <span className="text-[10px] font-bold text-[#E94359] uppercase tracking-wider">
+                  Accurate PDF Only
+                </span>
+              </div>
+              <input
+                type="text"
+                value={design.withoutFineDate || ""}
+                onChange={(e) =>
+                  setDesign((d) => ({
+                    ...d,
+                    withoutFineDate: e.target.value,
+                  }))
+                }
+                onBlur={() => pushState(design)}
+                className="w-full h-10 px-3.5 rounded-[8px] bg-white border border-rose-200 text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 transition-all"
+                placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
+              />
+              <p className="text-[11px] text-rose-800/80 leading-tight">
+                Displayed as an urgent highlight on the poster only for exam registration when verified from the official notification.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -497,7 +542,7 @@ function PosterStudioInner() {
                 <img
                   src={design.customLogo || "/logo.png"}
                   alt="Current logo"
-                  className="h-9 w-auto max-w-[80px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
+                  className="h-11 w-auto max-w-[90px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
                 />
                 <div className="text-xs truncate">
                   <div className="font-semibold text-[#242424] truncate">
