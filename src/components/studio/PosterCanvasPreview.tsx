@@ -26,6 +26,10 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
   const spec = POSTER_FORMATS[formatKey] || POSTER_FORMATS.instagram_portrait
   const accent = design.accentColorOverride || template.accentColor
   const cardBg = design.cardBgOverride || template.cardBg
+  const activeLogo =
+    design.customLogo !== undefined && design.customLogo !== null
+      ? design.customLogo
+      : "/logo.png"
 
   const titleSizeClass =
     formatKey === "landscape"
@@ -79,30 +83,15 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
 
           {design.logoPlacement !== "hidden" &&
             design.logoPlacement !== "bottom-right" && (
-              design.customLogo ? (
+              activeLogo ? (
                 <div className="flex items-center shrink-0">
                   <img
-                    src={design.customLogo}
+                    src={activeLogo}
                     alt="Logo"
-                    className="h-8 max-h-8 max-w-[120px] object-contain rounded"
+                    className="h-10 max-h-10 w-auto max-w-[130px] object-contain rounded"
                   />
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <div
-                    style={{ backgroundColor: accent }}
-                    className="w-7 h-7 rounded-lg text-white font-black text-[11px] flex items-center justify-center shadow"
-                  >
-                    KTU
-                  </div>
-                  <div className="text-left leading-none">
-                    <div className="text-[11px] font-extrabold">B.Tech</div>
-                    <div className="text-[9px] opacity-65 font-semibold">
-                      Official
-                    </div>
-                  </div>
-                </div>
-              )
+              ) : null
             )}
         </div>
 

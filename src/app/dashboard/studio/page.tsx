@@ -117,7 +117,7 @@ function PosterStudioInner() {
       accentColorOverride: "",
       cardBgOverride: "",
       customBackgroundImage: null,
-      customLogo: savedLogo,
+      customLogo: savedLogo || "/logo.png",
       logoPlacement: "top-right",
     }
   })
@@ -128,6 +128,8 @@ function PosterStudioInner() {
       const savedLogo = localStorage.getItem("ktu_default_logo")
       if (savedLogo) {
         setDesign((prev) => ({ ...prev, customLogo: savedLogo }))
+      } else {
+        setDesign((prev) => ({ ...prev, customLogo: "/logo.png" }))
       }
     }
   }, [])
@@ -188,7 +190,7 @@ function PosterStudioInner() {
         accentColorOverride: "",
         cardBgOverride: "",
         customBackgroundImage: null,
-        customLogo: savedLogo,
+        customLogo: savedLogo || "/logo.png",
         logoPlacement: "top-right",
       }
       setDesign(newD)
@@ -244,11 +246,11 @@ function PosterStudioInner() {
     }
   }
 
-  // Reset to default KTU crest
+  // Reset to default logo
   const handleResetLogo = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("ktu_default_logo")
-      pushState({ ...design, customLogo: null })
+      pushState({ ...design, customLogo: "/logo.png" })
       setGlobalLogoSaved(false)
     }
   }
@@ -698,23 +700,19 @@ function PosterStudioInner() {
                   {/* Logo Preview & Upload */}
                   <div className="p-3 rounded-[8px] bg-white border border-[#E5E5E5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      {design.customLogo ? (
-                        <img
-                          src={design.customLogo}
-                          alt="Custom logo"
-                          className="h-9 w-auto max-w-[100px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-[8px] bg-[#E94359] text-white flex items-center justify-center font-bold text-[11px] shadow-xs shrink-0">
-                          KTU
-                        </div>
-                      )}
+                      <img
+                        src={design.customLogo || "/logo.png"}
+                        alt="Current logo"
+                        className="h-10 w-auto max-w-[100px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
+                      />
                       <div className="text-xs truncate">
                         <div className="font-semibold text-[#242424] truncate">
-                          {design.customLogo ? "Custom Uploaded Logo" : "Default KTU B.Tech Crest"}
+                          {design.customLogo && design.customLogo !== "/logo.png"
+                            ? "Custom Uploaded Logo"
+                            : "KSU GECI (Default Emblem)"}
                         </div>
                         <div className="text-[11px] text-neutral-400">
-                          {design.customLogo ? "Active logo" : "Standard institutional badge"}
+                          Active emblem on poster
                         </div>
                       </div>
                     </div>
@@ -731,7 +729,7 @@ function PosterStudioInner() {
                   </div>
 
                   {/* Global Persistence Buttons */}
-                  {design.customLogo && (
+                  {design.customLogo && design.customLogo !== "/logo.png" && (
                     <div className="flex items-center gap-2 pt-1">
                       <button
                         onClick={handleSetLogoAsDefault}
@@ -745,7 +743,7 @@ function PosterStudioInner() {
                         onClick={handleResetLogo}
                         className="h-8 px-3 rounded-[8px] bg-neutral-200/80 hover:bg-neutral-300 text-neutral-700 text-xs font-medium transition-colors"
                       >
-                        Reset to KTU
+                        Reset
                       </button>
                     </div>
                   )}

@@ -82,7 +82,12 @@ export async function renderPosterToDataUrl(params: {
   ctx.textAlign = "left"
   ctx.fillText(catText, contentX + 24, cursorY + 32)
 
-  if (design.logoPlacement !== "hidden") {
+  const activeLogo =
+    design.customLogo !== undefined && design.customLogo !== null
+      ? design.customLogo
+      : "/logo.png"
+
+  if (design.logoPlacement !== "hidden" && activeLogo) {
     const logoX =
       design.logoPlacement === "top-left" ? contentX : contentRight - 170
     const logoY =
@@ -90,30 +95,19 @@ export async function renderPosterToDataUrl(params: {
         ? outerPad + cardH - 112
         : cursorY
 
-    if (design.customLogo) {
-      try {
-        const logoImg = await loadImage(design.customLogo)
-        const maxLogoH = 50
-        const maxLogoW = 160
-        const aspect = logoImg.width / logoImg.height
-        let drawW = maxLogoH * aspect
-        let drawH = maxLogoH
-        if (drawW > maxLogoW) {
-          drawW = maxLogoW
-          drawH = drawW / aspect
-        }
-        ctx.drawImage(logoImg, logoX, logoY + (50 - drawH) / 2, drawW, drawH)
-      } catch {
-        ctx.fillStyle = accent
-        ctx.beginPath()
-        ctx.roundRect(logoX, logoY, 54, 50, 14)
-        ctx.fill()
-
-        ctx.fillStyle = "#FFFFFF"
-        ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
-        ctx.fillText("KTU", logoX + 7, logoY + 32)
+    try {
+      const logoImg = await loadImage(activeLogo)
+      const maxLogoH = 54
+      const maxLogoW = 160
+      const aspect = logoImg.width / logoImg.height
+      let drawW = maxLogoH * aspect
+      let drawH = maxLogoH
+      if (drawW > maxLogoW) {
+        drawW = maxLogoW
+        drawH = drawW / aspect
       }
-    } else {
+      ctx.drawImage(logoImg, logoX, logoY + (54 - drawH) / 2, drawW, drawH)
+    } catch {
       ctx.fillStyle = accent
       ctx.beginPath()
       ctx.roundRect(logoX, logoY, 54, 50, 14)
@@ -122,13 +116,6 @@ export async function renderPosterToDataUrl(params: {
       ctx.fillStyle = "#FFFFFF"
       ctx.font = "800 20px 'Plus Jakarta Sans', sans-serif"
       ctx.fillText("KTU", logoX + 7, logoY + 32)
-
-      ctx.fillStyle = template.primaryText
-      ctx.font = "700 18px Inter, sans-serif"
-      ctx.fillText("B.Tech", logoX + 66, logoY + 24)
-      ctx.fillStyle = template.secondaryText
-      ctx.font = "600 14px Inter, sans-serif"
-      ctx.fillText("Official", logoX + 66, logoY + 42)
     }
   }
 

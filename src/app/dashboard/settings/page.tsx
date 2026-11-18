@@ -65,7 +65,7 @@ export default function SettingsPage() {
   const handleResetLogo = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("ktu_default_logo")
-      setGlobalLogo(null)
+      setGlobalLogo("/logo.png")
     }
   }
 
@@ -156,25 +156,19 @@ export default function SettingsPage() {
 
           <div className="p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              {globalLogo ? (
-                <img
-                  src={globalLogo}
-                  alt="Default Logo"
-                  className="h-10 w-auto max-w-[120px] object-contain rounded bg-white p-1 border border-neutral-200"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-[8px] bg-[#E94359] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                  KTU
-                </div>
-              )}
+              <img
+                src={globalLogo || "/logo.png"}
+                alt="Default Logo"
+                className="h-10 w-auto max-w-[120px] object-contain rounded bg-white p-1 border border-neutral-200"
+              />
               <div>
                 <div className="text-xs font-semibold text-[#242424]">
-                  {globalLogo ? "Custom Emblem Configured" : "Default APJ KTU Institutional Crest"}
+                  {globalLogo && globalLogo !== "/logo.png"
+                    ? "Custom Emblem Configured"
+                    : "KSU GECI (Default Emblem)"}
                 </div>
                 <div className="text-[11px] text-neutral-500 mt-0.5">
-                  {globalLogo
-                    ? "This logo automatically applies to all generated posters"
-                    : "Upload your custom college or department insignia here"}
+                  This logo automatically applies to all generated posters
                 </div>
               </div>
             </div>

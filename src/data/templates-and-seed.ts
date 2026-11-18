@@ -5,6 +5,8 @@ import {
   TemplateStyle,
 } from "@/types/poster-studio"
 
+export const DEFAULT_LOGO_URL = "/logo.png"
+
 export const POSTER_FORMATS: Record<PosterFormatKey, PosterFormatSpec> = {
   instagram_portrait: {
     key: "instagram_portrait",
