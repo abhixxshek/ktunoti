@@ -451,8 +451,16 @@ function DashboardFeedContent() {
                               withoutFineParam
                                 ? `&withoutFine=${encodeURIComponent(withoutFineParam)}`
                                 : ""
+                            }${
+                              item.pdf_url
+                                ? `&pdfUrl=${encodeURIComponent(item.pdf_url)}`
+                                : ""
+                            }${
+                              item.original_url
+                                ? `&sourceUrl=${encodeURIComponent(item.original_url)}`
+                                : ""
                             }`}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-[10px] bg-neutral-50 hover:bg-[#E94359] text-neutral-700 hover:text-white border border-[#E5E5E5] hover:border-[#E94359] text-xs font-semibold transition-all group/btn shadow-xs active:scale-[0.98]"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-bold transition-all group/btn shadow-xs active:scale-[0.98]"
                           >
                             <span>Design poster</span>
                             <ArrowRight

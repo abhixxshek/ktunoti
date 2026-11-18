@@ -25,6 +25,8 @@ import {
   ChevronDown,
   X,
   ArrowLeft,
+  FileText,
+  ExternalLink,
 } from "lucide-react"
 import {
   BTECH_CATEGORIES,
@@ -82,6 +84,19 @@ function PosterStudioInner() {
     searchParams.get("without_fine") ||
     searchParams.get("withoutFineDate") ||
     ""
+  const paramPdfUrl =
+    searchParams.get("pdfUrl") ||
+    searchParams.get("pdf_url") ||
+    searchParams.get("pdf") ||
+    ""
+  const paramSourceUrl =
+    searchParams.get("sourceUrl") ||
+    searchParams.get("source_url") ||
+    searchParams.get("source") ||
+    ""
+
+  const [pdfUrl, setPdfUrl] = useState<string>(paramPdfUrl)
+  const [sourceUrl, setSourceUrl] = useState<string>(paramSourceUrl)
 
   const resolved = resolveKtuCategoryAndTemplate(paramCat, paramTitle)
 
@@ -176,6 +191,17 @@ function PosterStudioInner() {
       searchParams.get("withoutFine") ||
       searchParams.get("without_fine") ||
       searchParams.get("withoutFineDate")
+    const pUrl =
+      searchParams.get("pdfUrl") ||
+      searchParams.get("pdf_url") ||
+      searchParams.get("pdf")
+    const sUrl =
+      searchParams.get("sourceUrl") ||
+      searchParams.get("source_url") ||
+      searchParams.get("source")
+
+    if (pUrl) setPdfUrl(pUrl)
+    if (sUrl) setSourceUrl(sUrl)
 
     if (t || c || s || r || m || tpl || wf) {
       const res = resolveKtuCategoryAndTemplate(c, t)
@@ -435,30 +461,75 @@ function PosterStudioInner() {
             /registration/i.test(design.category) ||
             Boolean(design.withoutFineDate)) && (
             <div className="p-3.5 rounded-[10px] bg-rose-50/70 border border-rose-200/80 space-y-2 mt-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#E94359]" />
                   Registration Without Fine (Date)
                 </label>
-                <span className="text-[10px] font-bold text-[#E94359] uppercase tracking-wider">
-                  Accurate PDF Only
-                </span>
+
+                {/* Option to view/check source PDF to confirm last date */}
+                {pdfUrl ? (
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
+                    title="Open official PDF in new tab to check and confirm date"
+                  >
+                    <FileText size={12} />
+                    <span>Check PDF</span>
+                    <ExternalLink size={10} />
+                  </a>
+                ) : sourceUrl ? (
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
+                    title="Open notification source"
+                  >
+                    <FileText size={12} />
+                    <span>Check Source</span>
+                    <ExternalLink size={10} />
+                  </a>
+                ) : (
+                  <span className="text-[10px] font-bold text-[#E94359] uppercase tracking-wider">
+                    Accurate PDF Only
+                  </span>
+                )}
               </div>
-              <input
-                type="text"
-                value={design.withoutFineDate || ""}
-                onChange={(e) =>
-                  setDesign((d) => ({
-                    ...d,
-                    withoutFineDate: e.target.value,
-                  }))
-                }
-                onBlur={() => pushState(design)}
-                className="w-full h-10 px-3.5 rounded-[8px] bg-white border border-rose-200 text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 transition-all"
-                placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
-              />
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={design.withoutFineDate || ""}
+                  onChange={(e) =>
+                    setDesign((d) => ({
+                      ...d,
+                      withoutFineDate: e.target.value,
+                    }))
+                  }
+                  onBlur={() => pushState(design)}
+                  className="flex-1 h-10 px-3.5 rounded-[8px] bg-white border border-rose-200 text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 transition-all"
+                  placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
+                />
+                {pdfUrl && (
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-10 px-3 rounded-[8px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shrink-0 shadow-2xs"
+                    title="Open official PDF"
+                  >
+                    <FileText size={14} />
+                    <span className="hidden sm:inline">Open PDF</span>
+                    <ExternalLink size={11} />
+                  </a>
+                )}
+              </div>
+
               <p className="text-[11px] text-rose-800/80 leading-tight">
-                Displayed as an urgent highlight on the poster only for exam registration when verified from the official notification.
+                Click <strong className="font-semibold text-[#E94359]">Check PDF</strong> to inspect the official circular. Displays on poster only when verified.
               </p>
             </div>
           )}
@@ -706,9 +777,9 @@ function PosterStudioInner() {
   )
 
   return (
-    <div className="flex flex-col h-full lg:h-[calc(100vh-5.5rem)] w-full pb-14 md:pb-0">
-      {/* ── TOP APPLICATION BAR (Responsive Standard Controls) ── */}
-      <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white border border-[#E5E5E5] mb-3 sm:mb-4 shrink-0 shadow-xs">
+    <div className="flex flex-col min-h-full lg:h-[calc(100vh-5.5rem)] w-full pb-28 md:pb-0">
+      {/* ── TOP APPLICATION BAR (Sticky & Responsive Standard Controls) ── */}
+      <div className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5E5E5] mb-3 sm:mb-4 shrink-0 shadow-xs">
         {/* Left: Brand / Title */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
@@ -776,11 +847,11 @@ function PosterStudioInner() {
             </button>
           </div>
 
-          {/* 1-Click Direct PNG Export (No modal or option picker) */}
+          {/* 1-Click Direct PNG Export (Always accessible & prominent) */}
           <button
             onClick={handleExportPng}
             disabled={isExporting}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs sm:text-[13px] font-semibold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-3.5 sm:px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs sm:text-[13px] font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 shrink-0"
           >
             <Download size={14} className={isExporting ? "animate-bounce" : ""} />
             <span className="hidden sm:inline">{isExporting ? "Exporting PNG..." : "Export poster (PNG) ↓"}</span>
@@ -790,7 +861,7 @@ function PosterStudioInner() {
       </div>
 
       {/* ── WORKSPACE ── */}
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-3 sm:gap-4 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-3 sm:gap-4 min-h-0 lg:overflow-hidden">
         {/* 1. LEFT TOOLBAR RAIL (Desktop Only) */}
         <div className="hidden lg:flex lg:col-span-1 flex-col items-center py-4 bg-white rounded-xl border border-[#E5E5E5] shadow-xs space-y-3">
           {[
@@ -909,33 +980,46 @@ function PosterStudioInner() {
         </div>
       </div>
 
-      {/* ── MOBILE BOTTOM TOOL RAIL (Touch Friendly Toolbar) ── */}
-      <div className="lg:hidden mt-2 p-1 rounded-xl bg-white border border-[#E5E5E5] shadow-xs flex items-center justify-around shrink-0">
-        {[
-          { id: "content", label: "Content", icon: Sliders },
-          { id: "templates", label: "Templates", icon: Layers },
-          { id: "styling", label: "Styling & Brand", icon: Palette },
-        ].map((tool) => {
-          const Icon = tool.icon
-          const active = activeTab === tool.id && mobileSheetOpen
-          return (
-            <button
-              key={tool.id}
-              onClick={() => {
-                setActiveTab(tool.id as any)
-                setMobileSheetOpen(true)
-              }}
-              className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-[8px] text-xs font-semibold transition-all ${
-                active
-                  ? "bg-[#E94359] text-white shadow-xs"
-                  : "text-neutral-600 hover:text-[#242424] hover:bg-neutral-50"
-              }`}
-            >
-              <Icon size={14} />
-              <span>{tool.label}</span>
-            </button>
-          )
-        })}
+      {/* ── MOBILE EXPORT & TOOL ACTION BAR ── */}
+      <div className="lg:hidden mt-3 space-y-2.5 shrink-0">
+        {/* Big Primary Export Button on Mobile */}
+        <button
+          onClick={handleExportPng}
+          disabled={isExporting}
+          className="w-full h-12 rounded-[12px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-bold shadow-md inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          <Download size={16} className={isExporting ? "animate-bounce" : ""} />
+          <span>{isExporting ? "Exporting PNG Poster..." : "Export Poster (PNG) ↓"}</span>
+        </button>
+
+        {/* Tool Tabs Rail */}
+        <div className="p-1 rounded-xl bg-white border border-[#E5E5E5] shadow-xs flex items-center justify-around">
+          {[
+            { id: "content", label: "Edit Content", icon: Sliders },
+            { id: "templates", label: "Templates", icon: Layers },
+            { id: "styling", label: "Styling & Brand", icon: Palette },
+          ].map((tool) => {
+            const Icon = tool.icon
+            const active = activeTab === tool.id && mobileSheetOpen
+            return (
+              <button
+                key={tool.id}
+                onClick={() => {
+                  setActiveTab(tool.id as any)
+                  setMobileSheetOpen(true)
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-[8px] text-xs font-semibold transition-all ${
+                  active
+                    ? "bg-neutral-900 text-white shadow-xs"
+                    : "text-neutral-700 hover:text-[#242424] hover:bg-neutral-50"
+                }`}
+              >
+                <Icon size={14} />
+                <span>{tool.label}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── MOBILE SLIDE-UP BOTTOM SHEET DRAWER ── */}
@@ -1014,14 +1098,26 @@ function PosterStudioInner() {
               {renderInspectorContent()}
             </div>
 
-            {/* Done / Collapse Button at bottom of sheet */}
-            <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 flex justify-end">
+            {/* Sheet Footer Actions with direct Export button */}
+            <div className="p-3 border-t border-neutral-100 bg-neutral-50/80 flex items-center gap-2.5 shrink-0">
               <button
                 onClick={() => setMobileSheetOpen(false)}
-                className="w-full h-10 rounded-[10px] bg-[#242424] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
+                className="flex-1 h-11 rounded-[10px] bg-white border border-[#E5E5E5] text-[#242424] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-neutral-50 active:scale-[0.98]"
               >
                 <Check size={14} />
-                <span>Apply & View Canvas</span>
+                <span>Done Editing</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileSheetOpen(false)
+                  handleExportPng()
+                }}
+                disabled={isExporting}
+                className="flex-1 h-11 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                <Download size={15} className={isExporting ? "animate-bounce" : ""} />
+                <span>{isExporting ? "Exporting..." : "Export PNG ↓"}</span>
               </button>
             </div>
           </div>

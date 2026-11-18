@@ -145,12 +145,21 @@ function NotificationDetailContent({ params }: Props) {
     const deadline = aiData.deadlines || ""
     const withoutFine = aiData.without_fine_date || ""
     const title = aiData.main_title || (notification ? notification.title : "")
+    const pdfParam = notification?.pdf_url
+      ? `&pdfUrl=${encodeURIComponent(notification.pdf_url)}`
+      : ""
+    const sourceParam = notification?.original_url
+      ? `&sourceUrl=${encodeURIComponent(notification.original_url)}`
+      : ""
+
     router.push(
       `/dashboard/studio?notificationId=${resolvedParams.id}&title=${encodeURIComponent(
         title
       )}&category=${encodeURIComponent(cat)}&semester=${encodeURIComponent(
         sem
-      )}&deadline=${encodeURIComponent(deadline)}&withoutFine=${encodeURIComponent(withoutFine)}`
+      )}&deadline=${encodeURIComponent(deadline)}&withoutFine=${encodeURIComponent(
+        withoutFine
+      )}${pdfParam}${sourceParam}`
     )
   }
 
@@ -383,15 +392,42 @@ function NotificationDetailContent({ params }: Props) {
               {(/registration/i.test(notification?.title || "") ||
                 /registration/i.test(aiData.main_title) ||
                 Boolean(aiData.without_fine_date)) && (
-                <div className="p-3.5 rounded-[10px] bg-amber-50/70 border border-amber-200 space-y-1.5">
-                  <div className="flex items-center justify-between">
+                <div className="p-3.5 rounded-[10px] bg-amber-50/70 border border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                     <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
                       Registration Without Fine (Date)
                     </label>
-                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                      Accurate PDF Only
-                    </span>
+
+                    {notification?.pdf_url ? (
+                      <a
+                        href={notification.pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-amber-100/60 border border-amber-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0"
+                        title="Open official PDF in new tab to verify last date"
+                      >
+                        <FileText size={12} />
+                        <span>Check PDF</span>
+                        <ExternalLink size={10} />
+                      </a>
+                    ) : notification?.original_url ? (
+                      <a
+                        href={notification.original_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-amber-100/60 border border-amber-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0"
+                        title="Open notification source"
+                      >
+                        <FileText size={12} />
+                        <span>Check Source</span>
+                        <ExternalLink size={10} />
+                      </a>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                        Accurate PDF Only
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -403,7 +439,7 @@ function NotificationDetailContent({ params }: Props) {
                     className="w-full h-10 px-3.5 text-[13px] text-[#242424] bg-white border border-amber-200 focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 rounded-[8px] focus:outline-none transition-all"
                   />
                   <p className="text-[11px] text-amber-800/80">
-                    Extracted only for exam registration if explicitly present in the notification / PDF.
+                    Click <strong className="font-semibold text-amber-900">Check PDF</strong> to verify the official circular, then confirm the date.
                   </p>
                 </div>
               )}
