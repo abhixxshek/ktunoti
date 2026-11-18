@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { Search, Bell, Layers, Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Search, Plus, Menu, Radio, ExternalLink } from "lucide-react"
 import { useMobileNav } from "./MobileNavContext"
 
 export default function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const { toggleMobile } = useMobileNav()
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -19,53 +19,69 @@ export default function Header() {
     }
   }
 
-  return (
-    <header className="sticky top-0 z-40 h-16 bg-black/40 backdrop-blur-2xl border-b border-white/[0.08] px-4 sm:px-8 flex items-center justify-between shrink-0 gap-4 transition-all duration-300">
-      {/* Mobile Hamburger Button */}
-      <button
-        onClick={toggleMobile}
-        className="p-2 -ml-2 text-white/70 hover:text-white rounded-2xl hover:bg-white/[0.08] md:hidden transition-colors active:scale-[0.96]"
-        aria-label="Toggle navigation menu"
-      >
-        <Menu size={20} />
-      </button>
+  // Breadcrumb title
+  const getPageTitle = () => {
+    if (pathname.includes("/studio")) return "Poster Studio"
+    if (pathname.includes("/library")) return "Poster Library"
+    if (pathname.includes("/settings")) return "Brand Settings"
+    return "Live Notifications"
+  }
 
-      {/* Cinematic Glass Search Input */}
-      <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md group">
+  return (
+    <header className="sticky top-0 z-40 h-16 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-neutral-200/80 px-4 sm:px-8 flex items-center justify-between gap-4 transition-all">
+      {/* Left: Mobile Toggle & Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleMobile}
+          className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 rounded-xl hover:bg-neutral-200/60 md:hidden transition-colors"
+          aria-label="Toggle navigation"
+        >
+          <Menu size={20} />
+        </button>
+
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-neutral-500 hidden sm:inline">Workspace</span>
+          <span className="text-neutral-300 hidden sm:inline">/</span>
+          <span className="font-semibold text-neutral-900">{getPageTitle()}</span>
+        </div>
+      </div>
+
+      {/* Center: Search */}
+      <form onSubmit={handleSearchSubmit} className="relative w-full max-w-sm hidden sm:block">
         <Search
-          size={15}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-[#FF3355] transition-colors"
+          size={14}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
         />
         <input
           type="text"
-          placeholder="Search notifications, timetables, circulars..."
+          placeholder="Search announcements, exams..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 text-xs text-white placeholder:text-white/40 bg-white/[0.04] hover:bg-white/[0.07] focus:bg-white/[0.09] backdrop-blur-xl border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 shadow-inner transition-all duration-300"
+          className="w-full pl-9 pr-4 py-1.5 text-xs text-neutral-800 placeholder:text-neutral-400 bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#E94359] focus:ring-1 focus:ring-[#E94359]/20 transition-all shadow-sm"
         />
       </form>
 
-      {/* Right Quick Nav with Fluid Micro-Interactions */}
+      {/* Right Actions */}
       <div className="flex items-center gap-3 ml-auto shrink-0">
-        <Link href="/dashboard/notifications">
-          <button
-            type="button"
-            className="p-2.5 rounded-2xl text-white/70 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-300 active:scale-[0.96]"
-            title="University notifications"
-          >
-            <Bell size={16} />
-          </button>
+        {/* Source status badge */}
+        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-[11px] font-medium text-emerald-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>ktunotes.in live</span>
+        </div>
+
+        {/* Quick create poster action */}
+        <Link
+          href="/dashboard/studio"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+        >
+          <Plus size={14} />
+          <span>Create poster</span>
         </Link>
 
-        <Link href="/dashboard/studio">
-          <Button
-            size="sm"
-            className="h-9 px-4 rounded-2xl bg-gradient-to-r from-[#FF2E4D] to-[#E00028] hover:from-[#FF4D68] hover:to-[#FF1F42] text-white text-xs gap-2 font-semibold shadow-lg shadow-rose-600/25 border border-white/20 transition-all duration-300 active:scale-[0.98]"
-          >
-            <Layers size={14} />
-            <span className="hidden sm:inline">Poster Studio</span>
-          </Button>
-        </Link>
+        {/* User profile avatar */}
+        <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+          KT
+        </div>
       </div>
     </header>
   )

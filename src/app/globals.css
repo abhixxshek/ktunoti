@@ -2,15 +2,18 @@
 @import "tw-animate-css";
 
 :root {
-  /* Ultra-Premium Obsidian & Glass Tokens */
-  --background: #07080C;
-  --foreground: #F8FAFC;
-  --card: rgba(255, 255, 255, 0.025);
-  --card-foreground: #FFFFFF;
-  --primary: #FF2A55;
-  --primary-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.08);
-  --radius: 1.25rem;
+  --background: #FAF9F6;
+  --foreground: #242424;
+  --surface: #FFFFFF;
+  --surface-subtle: #F4F3EF;
+  --muted: #71717A;
+  --muted-light: #A1A1AA;
+  --border: #E4E4E7;
+  --border-light: #F4F4F5;
+  --coral: #E94359;
+  --coral-hover: #D83248;
+  --coral-subtle: #FDF2F4;
+  --radius: 0.875rem;
 }
 
 * {
@@ -19,84 +22,34 @@
   padding: 0;
 }
 
-html {
-  color-scheme: dark;
-}
-
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-/* ── Modern Obsidian Glass Panel ── */
-.glass-panel {
-  background: rgba(18, 20, 29, 0.55);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 24px 48px -12px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-}
-
-.glass-panel-subtle {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 
-    0 12px 30px -8px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-}
-
-.glass-card-hover {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.045);
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 30px 60px -15px rgba(0, 0, 0, 0.9),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-}
-
-/* ── Artboard Canvas Grid ── */
-.artboard-grid {
-  background-color: #05060A;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* ── Gradient Text ── */
-.text-gradient-silver {
-  background: linear-gradient(180deg, #FFFFFF 0%, #A6ADBB 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-gradient-crimson {
-  background: linear-gradient(135deg, #FF3366 0%, #FF6584 50%, #FFA07A 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* ── Sleek Custom Scrollbar ── */
+/* Subtle sleek scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: #D4D4D8;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: #A1A1AA;
+}
+
+/* Studio Canvas Background Pattern */
+.studio-canvas-bg {
+  background-color: #F0EFEA;
+  background-image: radial-gradient(#D5D3CC 1px, transparent 1px);
+  background-size: 20px 20px;
 }

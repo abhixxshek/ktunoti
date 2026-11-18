@@ -9,12 +9,16 @@ import {
   Search,
   ExternalLink,
   ArrowRight,
-  Palette,
   Calendar,
+  FileText,
+  SlidersHorizontal,
   CheckCircle2,
   AlertCircle,
-  FileText,
-  Filter,
+  FileDown,
+  Layers,
+  Sparkles,
+  CheckSquare,
+  Square,
 } from "lucide-react"
 
 interface NotificationItem {
@@ -28,7 +32,14 @@ interface NotificationItem {
   pdf_url?: string | null
 }
 
-const CATEGORIES = ["All", "Exam", "Result", "Academic", "General"]
+const CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "exam", label: "Examinations" },
+  { id: "result", label: "Results" },
+  { id: "timetable", label: "Timetables" },
+  { id: "academic", label: "Academic" },
+  { id: "general", label: "General" },
+]
 
 function DashboardFeedContent() {
   const searchParams = useSearchParams()
@@ -38,12 +49,21 @@ function DashboardFeedContent() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState(initialQ)
+  const [pdfOnly, setPdfOnly] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [postersCount, setPostersCount] = useState(0)
 
+  // Load saved posters count from localStorage
   useEffect(() => {
-    if (initialQ) setSearchQuery(initialQ)
-  }, [initialQ])
+    if (typeof window !== "undefined") {
+      try {
+        const saved = JSON.parse(localStorage.getItem("ktu_generated_posters") || "[]")
+        setPostersCount(saved.length)
+      } catch {}
+    }
+  }, [])
 
   const fetchNotifs = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -72,16 +92,22 @@ function DashboardFeedContent() {
     fetchNotifs(false)
   }, [fetchNotifs])
 
+  // Filtered list
   const filteredNotifs = useMemo(() => {
     return notifications.filter((item) => {
       // Category filter
-      if (selectedCategory !== "All") {
+      if (selectedCategory !== "all") {
         const itemCat = (item.category || "").toLowerCase()
-        const target = selectedCategory.toLowerCase()
-        if (!itemCat.includes(target) && !item.title.toLowerCase().includes(target)) {
-          return false
-        }
+        const titleLower = item.title.toLowerCase()
+        if (selectedCategory === "exam" && !itemCat.includes("exam") && !titleLower.includes("exam")) return false
+        if (selectedCategory === "result" && !itemCat.includes("result") && !titleLower.includes("result")) return false
+        if (selectedCategory === "timetable" && !titleLower.includes("timetable") && !titleLower.includes("time table")) return false
+        if (selectedCategory === "academic" && !itemCat.includes("academic") && !titleLower.includes("academic")) return false
+        if (selectedCategory === "general" && !itemCat.includes("general")) return false
       }
+
+      // PDF only filter
+      if (pdfOnly && !item.pdf_url) return false
 
       // Search query
       if (searchQuery.trim()) {
@@ -94,185 +120,368 @@ function DashboardFeedContent() {
 
       return true
     })
-  }, [notifications, selectedCategory, searchQuery])
+  }, [notifications, selectedCategory, searchQuery, pdfOnly])
+
+  // Group notifications by date
+  const groupedNotifs = useMemo(() => {
+    const groups: { [key: string]: NotificationItem[] } = {}
+
+    filteredNotifs.forEach((item) => {
+      let groupKey = "Earlier"
+      const dateStr = item.published_date
+      if (dateStr) {
+        const itemDate = new Date(dateStr)
+        const today = new Date()
+        const diffDays = Math.floor(
+          (today.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24)
+        )
+        if (diffDays <= 1) groupKey = "Today & Yesterday"
+        else if (diffDays <= 7) groupKey = "This Week"
+        else groupKey = "Earlier"
+      }
+      if (!groups[groupKey]) groups[groupKey] = []
+      groups[groupKey].push(item)
+    })
+
+    return groups
+  }, [filteredNotifs])
+
+  // Selection toggle
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredNotifs.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredNotifs.map((n) => n.source_id)))
+    }
+  }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 sm:p-7 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/[0.08] shadow-2xl relative overflow-hidden">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#FF3355] uppercase tracking-wider mb-1">
-            <span className="w-2 h-2 rounded-full bg-[#FF3355] animate-pulse" />
-            <span>Live KTU Announcements Feed</span>
+    <div className="space-y-7 pb-16">
+      {/* ── Page Header (Airbnb / Linear Style) ── */}
+      <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                LIVE SOURCE CONNECTED
+              </span>
+              <span className="text-xs text-neutral-400">·</span>
+              <span className="text-xs text-neutral-500">
+                Source: ktunotes.in
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+              Stay ahead of every update.
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-1 max-w-xl">
+              The latest announcements and examination notifications from APJ Abdul Kalam Technological University.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            KTU Notifications
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Sourced directly from{" "}
-            <a
-              href="https://ktunotes.in/notifications"
-              target="_blank"
-              rel="noreferrer"
-              className="text-white underline hover:text-[#FF5577] transition-colors"
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => fetchNotifs(true)}
+              disabled={refreshing || loading}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold transition-all disabled:opacity-50"
             >
-              ktunotes.in/notifications
-            </a>
-            . 1-click to generate high-res social posters.
-          </p>
+              <RefreshCw
+                size={14}
+                className={refreshing ? "animate-spin text-[#E94359]" : ""}
+              />
+              <span>{refreshing ? "Syncing..." : "Sync from ktunotes.in"}</span>
+            </button>
+
+            <Link
+              href="/dashboard/studio"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-semibold shadow-sm transition-all"
+            >
+              <Sparkles size={14} />
+              <span>Poster Studio</span>
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => fetchNotifs(true)}
-            disabled={refreshing || loading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white text-xs font-bold transition-all disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin text-[#FF3355]" : ""} />
-            <span>{refreshing ? "Scraping ktunotes.in..." : "Sync from ktunotes.in"}</span>
-          </button>
+        {/* 3 Metric Summary Blocks */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 border-t border-neutral-100">
+          <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100/80">
+            <div className="text-2xl font-extrabold text-neutral-900 tracking-tight">
+              {notifications.length}
+            </div>
+            <div className="text-xs font-medium text-neutral-500 mt-0.5">
+              Total updates
+            </div>
+          </div>
 
-          <Link
-            href="/dashboard/studio"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF2E4D] to-[#FF4565] text-white text-xs font-bold shadow-lg shadow-rose-600/30 hover:brightness-110 active:scale-95 transition-all"
-          >
-            <Palette size={15} />
-            <span>Poster Studio</span>
-          </Link>
+          <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100/80">
+            <div className="text-2xl font-extrabold text-[#E94359] tracking-tight">
+              {notifications.filter((n) => n.published_date).length}
+            </div>
+            <div className="text-xs font-medium text-neutral-500 mt-0.5">
+              Recent notifications
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100/80">
+            <div className="text-2xl font-extrabold text-neutral-900 tracking-tight">
+              {postersCount}
+            </div>
+            <div className="text-xs font-medium text-neutral-500 mt-0.5">
+              Posters created
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/[0.08] overflow-x-auto">
+      {/* ── Filter & Search Toolbar ── */}
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        {/* Horizontal Category Pills */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white border border-neutral-200/80 overflow-x-auto shadow-sm">
           {CATEGORIES.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                selectedCategory === cat
-                  ? "bg-[#FF3355] text-white shadow-md shadow-rose-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                selectedCategory === cat.id
+                  ? "bg-[#E94359] text-white shadow-sm"
+                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>
 
-        {/* Search Input */}
-        <div className="relative min-w-[240px] sm:w-72">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search notifications..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-2 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#FF3355] transition-colors"
-          />
+        {/* Right Search & PDF Filter */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative min-w-[220px] flex-1 md:w-64">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+            />
+            <input
+              type="text"
+              placeholder="Filter by keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-[#E94359] shadow-sm"
+            />
+          </div>
+
+          <button
+            onClick={() => setPdfOnly(!pdfOnly)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              pdfOnly
+                ? "bg-[#FDF2F4] text-[#E94359] border-[#E94359]/30"
+                : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+            }`}
+          >
+            <FileDown size={13} />
+            <span>PDF only</span>
+          </button>
         </div>
       </div>
 
-      {/* Error state */}
+      {/* ── Bulk Actions Bar (if selected) ── */}
+      {selectedIds.size > 0 && (
+        <div className="p-3 px-4 rounded-xl bg-neutral-900 text-white flex items-center justify-between shadow-lg text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2">
+            <span className="font-bold">{selectedIds.size}</span>
+            <span className="text-neutral-300">notifications selected</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const firstId = Array.from(selectedIds)[0]
+                const item = notifications.find((n) => n.source_id === firstId)
+                if (item) {
+                  window.location.href = `/dashboard/studio?title=${encodeURIComponent(
+                    item.title
+                  )}&category=${encodeURIComponent(item.category || "Exam")}`
+                }
+              }}
+              className="px-3 py-1 rounded-lg bg-[#E94359] text-white font-semibold hover:bg-[#D83248]"
+            >
+              Open in Studio
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="px-2.5 py-1 rounded-lg bg-neutral-800 text-neutral-300 hover:text-white"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle size={16} />
             <span>{error}</span>
           </div>
           <button
             onClick={() => fetchNotifs(true)}
-            className="font-bold underline hover:text-white"
+            className="font-bold underline hover:text-rose-900"
           >
             Retry Fetch
           </button>
         </div>
       )}
 
-      {/* Notifications List */}
+      {/* ── Notifications Feed ── */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] animate-pulse h-24"
+              className="h-28 rounded-2xl bg-white border border-neutral-200/60 p-5 animate-pulse"
             />
           ))}
         </div>
       ) : filteredNotifs.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-black/30 backdrop-blur-xl border border-white/[0.08] text-center space-y-3">
-          <Bell size={36} className="mx-auto text-slate-500 opacity-60" />
-          <h3 className="text-base font-bold text-white">No Notifications Found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+        <div className="p-12 rounded-2xl bg-white border border-neutral-200/80 text-center space-y-3 shadow-sm">
+          <Bell size={36} className="mx-auto text-neutral-300" />
+          <h3 className="text-base font-bold text-neutral-900">
+            No Notifications Found
+          </h3>
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto">
             {searchQuery
-              ? "No notifications matching your search query. Try clearing the filter."
-              : "No announcements scraped yet. Click 'Sync from ktunotes.in' to fetch the latest updates."}
+              ? "No announcements match your search. Try resetting filters."
+              : "No live notifications retrieved. Click sync to load announcements from ktunotes.in."}
           </p>
           <button
             onClick={() => fetchNotifs(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FF3355] text-white text-xs font-bold"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E94359] text-white text-xs font-semibold"
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={13} />
             <span>Sync Live Notifications</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredNotifs.map((item, idx) => {
-            const category = item.category || "Exam"
-            const dateStr = item.published_date || "Recent"
-
+        <div className="space-y-6">
+          {Object.entries(groupedNotifs).map(([groupTitle, items]) => {
+            if (items.length === 0) return null
             return (
-              <div
-                key={item.source_id || idx}
-                className="p-4 sm:p-5 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/[0.08] hover:border-white/20 hover:bg-white/[0.03] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-lg"
-              >
-                <div className="space-y-2 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#FF3355]/20 text-[#FF5577] border border-[#FF3355]/30">
-                      {category}
-                    </span>
-
-                    {dateStr && (
-                      <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-                        <Calendar size={12} />
-                        {dateStr}
-                      </span>
-                    )}
-
-                    {item.pdf_url && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                        PDF Available
-                      </span>
-                    )}
-                  </div>
-
-                  <h2 className="text-sm sm:text-base font-bold text-white group-hover:text-rose-400 transition-colors leading-snug">
-                    {item.title}
-                  </h2>
+              <div key={groupTitle} className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    {groupTitle}
+                  </h3>
+                  <span className="text-[11px] text-neutral-400">
+                    {items.length} {items.length === 1 ? "notice" : "notices"}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
-                  <a
-                    href={item.original_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 rounded-xl text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors"
-                    title="View on ktunotes.in"
-                  >
-                    <ExternalLink size={14} />
-                  </a>
+                <div className="space-y-3">
+                  {items.map((item, idx) => {
+                    const isSelected = selectedIds.has(item.source_id)
+                    const category = item.category || "Exam"
+                    const dateStr = item.published_date || "Recent"
 
-                  <Link
-                    href={`/dashboard/studio?title=${encodeURIComponent(
-                      item.title
-                    )}&category=${encodeURIComponent(category)}`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF2E4D] to-[#FF4565] text-white text-xs font-bold shadow-md shadow-rose-600/25 hover:brightness-110 active:scale-95 transition-all"
-                  >
-                    <span>Design Poster</span>
-                    <ArrowRight size={13} />
-                  </Link>
+                    return (
+                      <div
+                        key={item.source_id || idx}
+                        className={`bg-white rounded-2xl border p-5 transition-all shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${
+                          isSelected
+                            ? "border-[#E94359] ring-1 ring-[#E94359]/30"
+                            : "border-neutral-200/80 hover:border-neutral-300 hover:shadow-md"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                          {/* Selection Checkbox */}
+                          <button
+                            onClick={() => toggleSelect(item.source_id)}
+                            className="pt-1 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0"
+                            aria-label="Select notification"
+                          >
+                            {isSelected ? (
+                              <CheckSquare size={17} className="text-[#E94359]" />
+                            ) : (
+                              <Square size={17} />
+                            )}
+                          </button>
+
+                          {/* Info Column */}
+                          <div className="space-y-2 flex-1 min-w-0">
+                            {/* Top Badges Row */}
+                            <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                              <span className="px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neutral-100 text-neutral-700">
+                                {category}
+                              </span>
+
+                              <span className="px-2 py-0.5 rounded-full font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60">
+                                NEW
+                              </span>
+
+                              {dateStr && (
+                                <span className="text-neutral-400 flex items-center gap-1 font-mono">
+                                  <Calendar size={11} />
+                                  {dateStr}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Headline */}
+                            <h2 className="text-base font-bold text-neutral-900 group-hover:text-[#E94359] transition-colors leading-snug">
+                              {item.title}
+                            </h2>
+
+                            {/* Meta & Links */}
+                            <div className="flex items-center gap-3 text-xs text-neutral-500 pt-0.5">
+                              {item.pdf_url && (
+                                <span className="inline-flex items-center gap-1 text-neutral-600 font-medium">
+                                  <FileText size={12} className="text-neutral-400" />
+                                  PDF available
+                                </span>
+                              )}
+
+                              <a
+                                href={item.original_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-neutral-500 hover:text-neutral-900 transition-colors"
+                              >
+                                <span>Source</span>
+                                <ExternalLink size={11} />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Action */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
+                          <span className="text-xs text-neutral-400 sm:hidden">
+                            Ready to turn into a poster
+                          </span>
+
+                          <Link
+                            href={`/dashboard/studio?title=${encodeURIComponent(
+                              item.title
+                            )}&category=${encodeURIComponent(category)}`}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-50 hover:bg-[#E94359] text-neutral-700 hover:text-white border border-neutral-200/80 hover:border-[#E94359] text-xs font-semibold transition-all group/btn shadow-xs active:scale-[0.98]"
+                          >
+                            <span>Design poster</span>
+                            <ArrowRight
+                              size={13}
+                              className="group-hover/btn:translate-x-0.5 transition-transform"
+                            />
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -287,9 +496,9 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-64 text-white/50 text-xs">
-          <RefreshCw size={20} className="animate-spin text-[#FF3355] mr-2" />
-          Loading announcements...
+        <div className="flex items-center justify-center h-64 text-neutral-400 text-xs">
+          <RefreshCw size={18} className="animate-spin text-[#E94359] mr-2" />
+          Loading notifications...
         </div>
       }
     >

@@ -3,7 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion } from "framer-motion"
 import {
   Bell,
   Palette,
@@ -12,19 +11,20 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
   X,
-  ExternalLink,
+  User,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMobileNav } from "./MobileNavContext"
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Live Notifications", icon: Bell },
+const WORKSPACE_NAV = [
+  { href: "/dashboard", label: "Live Notifications", icon: Bell, badge: "Live" },
   { href: "/dashboard/studio", label: "Poster Studio", icon: Palette },
   { href: "/dashboard/library", label: "Poster Library", icon: Library },
 ]
 
-const BOTTOM_ITEMS = [
+const PREFERENCES_NAV = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
@@ -40,30 +40,30 @@ export default function Sidebar() {
     return pathname.startsWith(href)
   }
 
-  const renderNavList = (isMobile = false) => (
-    <div className="flex flex-col h-full bg-black/40 backdrop-blur-2xl">
+  const renderContent = (isMobile = false) => (
+    <div className="flex flex-col h-full bg-white border-r border-neutral-200/80">
       {/* Brand Header */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FF2E4D] to-[#B00020] text-white shrink-0 shadow-lg shadow-rose-600/30 border border-white/20">
-            <Sparkles size={19} />
+      <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#E94359] text-white shrink-0 shadow-sm">
+            <Sparkles size={18} />
           </div>
           {(!collapsed || isMobile) && (
-            <div className="overflow-hidden whitespace-nowrap">
-              <p className="text-sm font-extrabold tracking-tight text-white leading-tight">
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold tracking-tight text-neutral-900 leading-tight">
                 KTU Notify
               </p>
-              <p className="text-[10px] font-bold text-[#FF5577] tracking-wider uppercase">
-                ktunotes.in Sync
+              <p className="text-[9px] font-semibold text-neutral-400 tracking-wider uppercase">
+                Notifications. Reimagined.
               </p>
             </div>
           )}
-        </div>
+        </Link>
 
         {isMobile && (
           <button
             onClick={closeMobile}
-            className="p-1.5 text-white/60 hover:text-white rounded-xl hover:bg-white/[0.08] transition-colors"
+            className="p-1.5 text-neutral-500 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
             aria-label="Close menu"
           >
             <X size={18} />
@@ -72,106 +72,125 @@ export default function Sidebar() {
       </div>
 
       {/* Main Nav Items */}
-      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon
-          const active = isItemActive(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={isMobile ? closeMobile : undefined}
-              className={cn(
-                "flex items-center h-11 rounded-2xl transition-all duration-200 active:scale-[0.98]",
-                collapsed ? "justify-center w-full" : "gap-3 px-3.5",
-                active
-                  ? "bg-white/[0.1] backdrop-blur-xl border border-white/[0.18] text-white shadow-lg shadow-black/40"
-                  : "text-white/60 hover:text-white hover:bg-white/[0.05] border border-transparent"
-              )}
-            >
-              <div
+      <div className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+        {/* Workspace Section */}
+        <div className="space-y-1">
+          {(!collapsed || isMobile) && (
+            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              Workspace
+            </div>
+          )}
+          {WORKSPACE_NAV.map((item) => {
+            const Icon = item.icon
+            const active = isItemActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={isMobile ? closeMobile : undefined}
                 className={cn(
-                  "shrink-0 transition-colors",
-                  active ? "text-[#FF3355]" : "group-hover:text-white"
+                  "flex items-center h-10 rounded-xl transition-all duration-150",
+                  collapsed ? "justify-center w-full" : "gap-3 px-3",
+                  active
+                    ? "bg-[#FDF2F4] text-[#E94359] font-semibold"
+                    : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
                 )}
+                title={collapsed ? item.label : undefined}
               >
-                <Icon size={18} />
-              </div>
-              {!collapsed && (
-                <span className="text-xs font-semibold tracking-wide truncate">
-                  {item.label}
-                </span>
-              )}
-              {active && !collapsed && (
-                <motion.div
-                  layoutId="active-indicator"
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-[#FF3355] shadow-[0_0_8px_#FF3355]"
+                <Icon
+                  size={17}
+                  className={cn("shrink-0", active ? "text-[#E94359]" : "text-neutral-500")}
                 />
-              )}
-            </Link>
-          )
-        })}
+                {!collapsed && (
+                  <span className="text-xs truncate flex-1">{item.label}</span>
+                )}
+                {!collapsed && item.badge && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Preferences Section */}
+        <div className="space-y-1">
+          {(!collapsed || isMobile) && (
+            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              Preferences
+            </div>
+          )}
+          {PREFERENCES_NAV.map((item) => {
+            const Icon = item.icon
+            const active = isItemActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={isMobile ? closeMobile : undefined}
+                className={cn(
+                  "flex items-center h-10 rounded-xl transition-all duration-150",
+                  collapsed ? "justify-center w-full" : "gap-3 px-3",
+                  active
+                    ? "bg-[#FDF2F4] text-[#E94359] font-semibold"
+                    : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                )}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon
+                  size={17}
+                  className={cn("shrink-0", active ? "text-[#E94359]" : "text-neutral-500")}
+                />
+                {!collapsed && <span className="text-xs truncate">{item.label}</span>}
+              </Link>
+            )
+          })}
+
+          <button
+            onClick={() => alert("KTU Notify Studio • Need assistance? Reach out to @KTU_Updates or visit ktunotes.in.")}
+            className={cn(
+              "flex items-center h-10 rounded-xl text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-all duration-150 w-full text-left",
+              collapsed ? "justify-center px-0" : "gap-3 px-3"
+            )}
+            title={collapsed ? "Help & Support" : undefined}
+          >
+            <HelpCircle size={17} className="text-neutral-500 shrink-0" />
+            {!collapsed && <span className="text-xs truncate">Help & Support</span>}
+          </button>
+        </div>
       </div>
 
-      {/* Live Source Status */}
-      {(!collapsed || isMobile) && (
-        <div className="px-4 py-3 mx-3 mb-2 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-[11px] space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 font-medium">Source Feed</span>
-            <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              ktunotes.in
-            </span>
+      {/* User / Workspace Footer */}
+      <div className="p-3 border-t border-neutral-100 space-y-2">
+        <div
+          className={cn(
+            "flex items-center gap-2.5 p-2 rounded-xl bg-neutral-50 border border-neutral-100",
+            collapsed && "justify-center"
+          )}
+        >
+          <div className="w-7 h-7 rounded-lg bg-[#E94359]/10 text-[#E94359] flex items-center justify-center shrink-0">
+            <User size={14} />
           </div>
-          <a
-            href="https://ktunotes.in/notifications"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <span>Direct Website Link</span>
-            <ExternalLink size={10} />
-          </a>
+          {(!collapsed || isMobile) && (
+            <div className="overflow-hidden">
+              <p className="text-xs font-semibold text-neutral-900 truncate">Workspace</p>
+              <p className="text-[10px] text-neutral-500 truncate">Personal account</p>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Bottom Nav Settings */}
-      <div className="p-3 border-t border-white/[0.07] space-y-1">
-        {BOTTOM_ITEMS.map((item) => {
-          const Icon = item.icon
-          const active = isItemActive(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={isMobile ? closeMobile : undefined}
-              className={cn(
-                "flex items-center h-10 rounded-2xl transition-all duration-200 active:scale-[0.98]",
-                collapsed ? "justify-center w-full" : "gap-3 px-3.5",
-                active
-                  ? "bg-white/[0.1] text-white border border-white/15"
-                  : "text-white/60 hover:text-white hover:bg-white/[0.05]"
-              )}
-            >
-              <Icon size={17} />
-              {!collapsed && (
-                <span className="text-xs font-semibold">{item.label}</span>
-              )}
-            </Link>
-          )
-        })}
 
         {!isMobile && (
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "flex items-center h-9 w-full rounded-xl text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors mt-1",
-              collapsed ? "justify-center" : "gap-3 px-3"
+              "flex items-center h-8 w-full rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors text-xs",
+              collapsed ? "justify-center" : "gap-2 px-2"
             )}
-            aria-label="Toggle sidebar"
+            aria-label="Collapse sidebar"
           >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            {!collapsed && <span className="text-xs">Collapse</span>}
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {!collapsed && <span>Collapse</span>}
           </button>
         )}
       </div>
@@ -182,21 +201,21 @@ export default function Sidebar() {
     <>
       <aside
         className={cn(
-          "hidden md:block sticky top-0 h-screen shrink-0 border-r border-white/[0.08] transition-all duration-300 z-40",
-          collapsed ? "w-16" : "w-64"
+          "hidden md:block sticky top-0 h-screen shrink-0 transition-all duration-200 z-40",
+          collapsed ? "w-[76px]" : "w-[240px]"
         )}
       >
-        {renderNavList(false)}
+        {renderContent(false)}
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm"
             onClick={closeMobile}
           />
-          <aside className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10">
-            {renderNavList(true)}
+          <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10">
+            {renderContent(true)}
           </aside>
         </div>
       )}

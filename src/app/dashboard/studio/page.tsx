@@ -2,39 +2,42 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import jsPDF from "jspdf"
 import {
   Download,
-  Save,
+  RotateCcw,
+  RotateCw,
+  Maximize2,
   ZoomIn,
   ZoomOut,
-  Maximize2,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Sparkles,
   Layers,
+  Type,
   Palette,
+  Sparkles,
   Sliders,
   CheckCircle2,
-  FileImage,
   Upload,
-  RefreshCw,
-  Eye,
-  Settings2,
+  FileImage,
+  X,
   Check,
+  Shapes,
+  Image as ImageIcon,
+  Wand2,
+  Share2,
 } from "lucide-react"
 import {
   BTECH_CATEGORIES,
   BTechCategory,
   PosterDesignState,
   PosterFormatKey,
-  LogoPlacement,
 } from "@/types/poster-studio"
 import {
   TEMPLATE_LIBRARY,
   POSTER_FORMATS,
-  CATEGORY_TEMPLATE_MAP,
 } from "@/data/templates-and-seed"
 import { renderPosterToDataUrl } from "@/utils/canvas-exporter"
 import { PosterCanvasPreview } from "@/components/studio/PosterCanvasPreview"
@@ -91,9 +94,11 @@ function PosterStudioInner() {
     searchParams.get("template") || resolved.templateId
   )
   const [zoom, setZoom] = useState<number>(1)
+  const [activeTool, setActiveTool] = useState<"templates" | "text" | "elements" | "colors" | "branding">("templates")
   const [activeTab, setActiveTab] = useState<"content" | "templates" | "styling">("content")
   const [isExporting, setIsExporting] = useState<boolean>(false)
-  const [exportNotice, setExportNotice] = useState<string | null>(null)
+  const [showExportModal, setShowExportModal] = useState<boolean>(false)
+  const [savedStatus, setSavedStatus] = useState<boolean>(true)
 
   // Design state initialized from URL query parameters
   const [design, setDesign] = useState<PosterDesignState>({
@@ -117,6 +122,33 @@ function PosterStudioInner() {
     logoPlacement: "top-right",
   })
 
+  // History stack for Undo / Redo
+  const [history, setHistory] = useState<PosterDesignState[]>([design])
+  const [historyIndex, setHistoryIndex] = useState(0)
+
+  const pushState = (newDesign: PosterDesignState) => {
+    const updated = history.slice(0, historyIndex + 1)
+    setHistory([...updated, newDesign])
+    setHistoryIndex(updated.length)
+    setDesign(newDesign)
+    setSavedStatus(false)
+    setTimeout(() => setSavedStatus(true), 800)
+  }
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1)
+      setDesign(history[historyIndex - 1])
+    }
+  }
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1)
+      setDesign(history[historyIndex + 1])
+    }
+  }
+
   // Sync state whenever URL searchParams change
   useEffect(() => {
     const currentTitle = searchParams.get("title")
@@ -125,44 +157,62 @@ function PosterStudioInner() {
         searchParams.get("category"),
         currentTitle
       )
-      setDesign((prev) => ({
-        ...prev,
+      const freshDesign: PosterDesignState = {
+        ...design,
         title: currentTitle,
         category: category,
         semester: searchParams.get("semester") || "",
         officialReference: searchParams.get("ref") || "",
         malayalamSubtitle: searchParams.get("malayalam") || "",
-      }))
+      }
+      setDesign(freshDesign)
       setSelectedTemplateId(searchParams.get("template") || templateId)
+      setHistory([freshDesign])
+      setHistoryIndex(0)
     }
   }, [searchParams])
 
-  // Selected template object
   const currentTemplate =
     TEMPLATE_LIBRARY.find((t) => t.id === selectedTemplateId) ||
     TEMPLATE_LIBRARY[0]
 
-  // File upload handler for custom background
+  // AI Improve Layout Action (Page 6 & 16)
+  const handleAiImproveLayout = () => {
+    const titleLen = design.title.length
+    let optimalScale = 1.0
+    if (titleLen > 120) optimalScale = 0.88
+    else if (titleLen > 80) optimalScale = 0.96
+    else optimalScale = 1.1
+
+    const improved: PosterDesignState = {
+      ...design,
+      fontSizeScale: optimalScale,
+      textAlign: titleLen > 90 ? "left" : "left",
+      logoPlacement: "top-right",
+    }
+    pushState(improved)
+  }
+
+  // File upload for custom texture
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (event) => {
         if (event.target?.result) {
-          setDesign((prev) => ({
-            ...prev,
+          pushState({
+            ...design,
             customBackgroundImage: event.target!.result as string,
-          }))
+          })
         }
       }
       reader.readAsDataURL(file)
     }
   }
 
-  // Export as PNG / JPEG
-  const handleExport = async (format: "png" | "jpeg") => {
+  // Export functions
+  const handleDownload = async (format: "png" | "jpeg") => {
     setIsExporting(true)
-    setExportNotice(null)
     try {
       const dataUrl = await renderPosterToDataUrl({
         template: currentTemplate,
@@ -176,11 +226,8 @@ function PosterStudioInner() {
       link.href = dataUrl
       link.click()
 
-      // Also persist to local library cache
       saveToLocalLibrary(dataUrl, format)
-
-      setExportNotice(`Successfully exported ${format.toUpperCase()}!`)
-      setTimeout(() => setExportNotice(null), 3500)
+      setShowExportModal(false)
     } catch (err: any) {
       alert("Export failed: " + (err.message || "Unknown error"))
     } finally {
@@ -188,10 +235,8 @@ function PosterStudioInner() {
     }
   }
 
-  // Export as PDF
-  const handleExportPdf = async () => {
+  const handleDownloadPdf = async () => {
     setIsExporting(true)
-    setExportNotice(null)
     try {
       const dataUrl = await renderPosterToDataUrl({
         template: currentTemplate,
@@ -210,8 +255,8 @@ function PosterStudioInner() {
       pdf.addImage(dataUrl, "PNG", 0, 0, spec.width, spec.height)
       pdf.save(`KTU-${design.category.replace(/\s+/g, "_")}-${Date.now()}.pdf`)
 
-      setExportNotice("Successfully exported PDF!")
-      setTimeout(() => setExportNotice(null), 3500)
+      saveToLocalLibrary(dataUrl, "png")
+      setShowExportModal(false)
     } catch (err: any) {
       alert("PDF export failed: " + (err.message || "Unknown error"))
     } finally {
@@ -219,7 +264,6 @@ function PosterStudioInner() {
     }
   }
 
-  // Save to local library
   const saveToLocalLibrary = (dataUrl: string, exportFormat: "png" | "jpeg") => {
     if (typeof window === "undefined") return
     try {
@@ -234,7 +278,7 @@ function PosterStudioInner() {
         templateId: currentTemplate.id,
         templateName: currentTemplate.name,
         formatKey: selectedFormat,
-        dimensions: `${POSTER_FORMATS[selectedFormat].width}x${POSTER_FORMATS[selectedFormat].height}`,
+        dimensions: `${POSTER_FORMATS[selectedFormat].width} × ${POSTER_FORMATS[selectedFormat].height}`,
         exportFormat,
         dataUrl,
         createdAt: new Date().toISOString(),
@@ -242,7 +286,7 @@ function PosterStudioInner() {
       }
       localStorage.setItem(
         "ktu_generated_posters",
-        JSON.stringify([newItem, ...existing.slice(0, 19)])
+        JSON.stringify([newItem, ...existing.slice(0, 24)])
       )
     } catch (e) {
       console.warn("Could not save to localStorage", e)
@@ -250,11 +294,25 @@ function PosterStudioInner() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5.5rem)] max-w-7xl mx-auto">
-      {/* Top Studio Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/[0.08] mb-4 shrink-0 shadow-xl">
-        {/* Aspect Ratio Switcher */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/10 overflow-x-auto">
+    <div className="flex flex-col h-[calc(100vh-5.5rem)] w-full">
+      {/* ── TOP APPLICATION BAR (Page 4) ── */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-white border border-neutral-200/80 mb-4 shrink-0 shadow-sm">
+        {/* Left: Brand / Title */}
+        <div className="flex items-center gap-3">
+          <span className="font-extrabold text-sm text-neutral-900 tracking-tight">
+            KTU Notify Studio
+          </span>
+          <span className="text-neutral-300">|</span>
+          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="font-medium text-neutral-700">
+              {savedStatus ? "Saved" : "Saving..."}
+            </span>
+          </div>
+        </div>
+
+        {/* Center: Format Switcher (Page 4 & 7: 4:5 · 9:16 · 1:1 · 16:9) */}
+        <div className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-neutral-100 border border-neutral-200/60">
           {(Object.keys(POSTER_FORMATS) as PosterFormatKey[]).map((fKey) => {
             const spec = POSTER_FORMATS[fKey]
             const active = selectedFormat === fKey
@@ -262,10 +320,10 @@ function PosterStudioInner() {
               <button
                 key={fKey}
                 onClick={() => setSelectedFormat(fKey)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   active
-                    ? "bg-[#FF3355] text-white shadow-md shadow-rose-600/30"
-                    : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                    ? "bg-white text-neutral-900 shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-900"
                 }`}
               >
                 {spec.shortLabel}
@@ -274,90 +332,113 @@ function PosterStudioInner() {
           })}
         </div>
 
-        {/* Zoom Controls */}
-        <div className="hidden sm:flex items-center gap-1 text-slate-400 text-xs">
-          <button
-            onClick={() => setZoom((z) => Math.max(0.6, z - 0.1))}
-            className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Zoom Out"
-          >
-            <ZoomOut size={16} />
-          </button>
-          <span className="w-12 text-center font-mono font-semibold">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            onClick={() => setZoom((z) => Math.min(1.4, z + 0.1))}
-            className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Zoom In"
-          >
-            <ZoomIn size={16} />
-          </button>
-          <button
-            onClick={() => setZoom(1)}
-            className="p-1.5 rounded-lg hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Reset Zoom"
-          >
-            <Maximize2 size={15} />
-          </button>
-        </div>
-
-        {/* Export & Actions */}
+        {/* Right: History & Primary Export Button (Page 7) */}
         <div className="flex items-center gap-2">
-          {exportNotice && (
-            <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle2 size={14} />
-              {exportNotice}
-            </span>
-          )}
+          {/* Undo / Redo */}
+          <div className="flex items-center gap-0.5 mr-1">
+            <button
+              onClick={handleUndo}
+              disabled={historyIndex === 0}
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 disabled:opacity-30 transition-colors"
+              title="Undo"
+            >
+              <RotateCcw size={15} />
+            </button>
+            <button
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 disabled:opacity-30 transition-colors"
+              title="Redo"
+            >
+              <RotateCw size={15} />
+            </button>
+          </div>
 
           <button
-            onClick={() => handleExport("png")}
-            disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white text-xs font-bold transition-all disabled:opacity-50"
+            onClick={() => setShowExportModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
           >
-            <FileImage size={14} />
-            <span>PNG</span>
-          </button>
-
-          <button
-            onClick={() => handleExport("jpeg")}
-            disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white text-xs font-bold transition-all disabled:opacity-50"
-          >
-            <FileImage size={14} />
-            <span>JPEG</span>
-          </button>
-
-          <button
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#FF2E4D] to-[#FF4565] text-white text-xs font-bold shadow-lg shadow-rose-600/30 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
-          >
-            {isExporting ? (
-              <RefreshCw size={14} className="animate-spin" />
-            ) : (
-              <Download size={14} />
-            )}
-            <span>Export PDF</span>
+            <Download size={14} />
+            <span>Export poster ↓</span>
           </button>
         </div>
       </div>
 
-      {/* Main Studio Body: Canvas + Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-hidden">
-        {/* Left Side: Canvas Preview Stage */}
-        <div className="lg:col-span-7 flex flex-col items-center justify-center p-4 sm:p-8 rounded-3xl bg-black/30 backdrop-blur-2xl border border-white/[0.08] relative overflow-y-auto overflow-x-hidden shadow-2xl">
+      {/* ── 3-PART CREATIVE WORKSPACE (Page 4–6) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
+        {/* 1. LEFT TOOLBAR RAIL (Page 5) */}
+        <div className="hidden lg:flex lg:col-span-1 flex-col items-center py-4 bg-white rounded-2xl border border-neutral-200/80 shadow-sm space-y-4">
+          {[
+            { id: "templates", label: "Templates", icon: Layers, tab: "templates" },
+            { id: "text", label: "Text", icon: Type, tab: "content" },
+            { id: "elements", label: "Elements", icon: Shapes, tab: "content" },
+            { id: "colors", label: "Colors", icon: Palette, tab: "styling" },
+            { id: "branding", label: "Branding", icon: ImageIcon, tab: "styling" },
+          ].map((tool) => {
+            const Icon = tool.icon
+            const active = activeTool === tool.id
+            return (
+              <button
+                key={tool.id}
+                onClick={() => {
+                  setActiveTool(tool.id as any)
+                  setActiveTab(tool.tab as any)
+                }}
+                className={`flex flex-col items-center justify-center w-14 h-13 rounded-xl transition-all ${
+                  active
+                    ? "bg-[#FDF2F4] text-[#E94359] font-bold"
+                    : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 font-medium"
+                }`}
+              >
+                <Icon size={17} />
+                <span className="text-[10px] mt-1">{tool.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 2. CENTER CANVAS (Page 5) */}
+        <div className="lg:col-span-7 flex flex-col items-center justify-center p-4 sm:p-8 rounded-2xl bg-neutral-100/70 border border-neutral-200/80 relative overflow-y-auto overflow-x-hidden shadow-xs studio-canvas-bg">
+          {/* Top Canvas Bar */}
           <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-white/[0.08] border border-white/15 text-slate-300">
+            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-white/90 backdrop-blur-sm border border-neutral-200 text-neutral-700 shadow-xs">
               {currentTemplate.name}
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">
+            <span className="text-[10px] text-neutral-500 font-mono hidden sm:inline">
               {POSTER_FORMATS[selectedFormat].width} ×{" "}
               {POSTER_FORMATS[selectedFormat].height}
             </span>
           </div>
 
+          {/* Zoom controls */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-xl border border-neutral-200 shadow-xs text-xs text-neutral-600">
+            <button
+              onClick={() => setZoom((z) => Math.max(0.6, z - 0.1))}
+              className="p-1 rounded-lg hover:bg-neutral-100"
+              title="Zoom out"
+            >
+              <ZoomOut size={14} />
+            </button>
+            <span className="w-10 text-center font-mono font-semibold text-[11px]">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => setZoom((z) => Math.min(1.4, z + 0.1))}
+              className="p-1 rounded-lg hover:bg-neutral-100"
+              title="Zoom in"
+            >
+              <ZoomIn size={14} />
+            </button>
+            <button
+              onClick={() => setZoom(1)}
+              className="p-1 rounded-lg hover:bg-neutral-100"
+              title="Fit"
+            >
+              <Maximize2 size={13} />
+            </button>
+          </div>
+
+          {/* Actual Live Rendered Poster */}
           <div className="my-auto w-full flex items-center justify-center py-6">
             <PosterCanvasPreview
               template={currentTemplate}
@@ -368,13 +449,13 @@ function PosterStudioInner() {
           </div>
         </div>
 
-        {/* Right Side: Inspector Tabs & Controls */}
-        <div className="lg:col-span-5 flex flex-col rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/[0.08] overflow-hidden shadow-2xl">
-          {/* Tabs */}
-          <div className="flex border-b border-white/[0.08] bg-white/[0.02]">
+        {/* 3. RIGHT PROPERTIES INSPECTOR (Page 5 & 6) */}
+        <div className="lg:col-span-4 flex flex-col rounded-2xl bg-white border border-neutral-200/80 shadow-sm overflow-hidden">
+          {/* Tab Headers */}
+          <div className="flex border-b border-neutral-100 bg-neutral-50/50">
             {[
               { id: "content", label: "Content", icon: Sliders },
-              { id: "templates", label: "11 Templates", icon: Layers },
+              { id: "templates", label: "Templates", icon: Layers },
               { id: "styling", label: "Styling & Brand", icon: Palette },
             ].map((t) => {
               const Icon = t.icon
@@ -383,13 +464,13 @@ function PosterStudioInner() {
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id as any)}
-                  className={`flex-1 py-3 px-3 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${
+                  className={`flex-1 py-3 px-2 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition-all ${
                     active
-                      ? "border-[#FF3355] text-white bg-white/[0.04]"
-                      : "border-transparent text-slate-400 hover:text-white"
+                      ? "border-[#E94359] text-[#E94359] bg-white font-bold"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900"
                   }`}
                 >
-                  <Icon size={14} className={active ? "text-[#FF3355]" : ""} />
+                  <Icon size={14} />
                   <span>{t.label}</span>
                 </button>
               )
@@ -401,32 +482,39 @@ function PosterStudioInner() {
             {/* 1. CONTENT TAB */}
             {activeTab === "content" && (
               <div className="space-y-4">
+                {/* AI Improve Layout Button (Page 6) */}
+                <button
+                  onClick={handleAiImproveLayout}
+                  className="w-full py-2 px-3 rounded-xl bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] text-xs font-semibold flex items-center justify-center gap-2 border border-[#E94359]/20 transition-colors"
+                >
+                  <Wand2 size={14} />
+                  <span>AI Improve Layout</span>
+                </button>
+
                 {/* Category Dropdown */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                     B.Tech Category
                   </label>
                   <select
                     value={design.category}
                     onChange={(e) => {
                       const newCat = e.target.value as BTechCategory
-                      const tplId = CATEGORY_TEMPLATE_MAP[newCat]
-                      setDesign((d) => ({ ...d, category: newCat }))
-                      if (tplId) setSelectedTemplateId(tplId)
+                      pushState({ ...design, category: newCat })
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs font-semibold focus:outline-none focus:border-[#FF3355]"
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-medium focus:outline-none focus:border-[#E94359]"
                   >
                     {BTECH_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat} className="bg-slate-900 text-white">
+                      <option key={cat} value={cat}>
                         {cat}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Main Title */}
+                {/* Headline Textarea */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                     Announcement Headline
                   </label>
                   <textarea
@@ -435,14 +523,15 @@ function PosterStudioInner() {
                     onChange={(e) =>
                       setDesign((d) => ({ ...d, title: e.target.value }))
                     }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs leading-relaxed focus:outline-none focus:border-[#FF3355]"
-                    placeholder="Enter main headline..."
+                    onBlur={() => pushState(design)}
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-xs leading-relaxed focus:outline-none focus:border-[#E94359]"
+                    placeholder="Enter announcement headline..."
                   />
                 </div>
 
                 {/* Malayalam Subtitle */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                     Malayalam Subtitle (Optional)
                   </label>
                   <input
@@ -454,20 +543,21 @@ function PosterStudioInner() {
                         malayalamSubtitle: e.target.value,
                       }))
                     }
-                    className="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs font-medium focus:outline-none focus:border-[#FF3355]"
+                    onBlur={() => pushState(design)}
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-xs font-medium focus:outline-none focus:border-[#E94359]"
                     placeholder="മലയാളം അടിക്കുറിപ്പ്..."
                   />
                 </div>
 
-                {/* Optional Metadata Badges */}
-                <div className="pt-3 border-t border-white/[0.06] space-y-3">
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Optional Reference Badges
+                {/* Optional Metadata: Semester & Ref */}
+                <div className="pt-2 border-t border-neutral-100 space-y-3">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                    Optional Reference Pills
                   </span>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">
+                      <label className="block text-[10px] text-neutral-500 mb-1">
                         Semester (Optional)
                       </label>
                       <input
@@ -476,13 +566,14 @@ function PosterStudioInner() {
                         onChange={(e) =>
                           setDesign((d) => ({ ...d, semester: e.target.value }))
                         }
-                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs"
+                        onBlur={() => pushState(design)}
+                        className="w-full px-3 py-1.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs"
                         placeholder="e.g. S6"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">
+                      <label className="block text-[10px] text-neutral-500 mb-1">
                         KTU Ref (Optional)
                       </label>
                       <input
@@ -494,52 +585,22 @@ function PosterStudioInner() {
                             officialReference: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs font-mono"
+                        onBlur={() => pushState(design)}
+                        className="w-full px-3 py-1.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-mono"
                         placeholder="e.g. KTU/EX-II/..."
                       />
                     </div>
                   </div>
                 </div>
-
-                {/* Footer and Source */}
-                <div className="pt-3 border-t border-white/[0.06] space-y-3">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">
-                      Source Attribution
-                    </label>
-                    <input
-                      type="text"
-                      value={design.sourceText}
-                      onChange={(e) =>
-                        setDesign((d) => ({ ...d, sourceText: e.target.value }))
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">
-                      Footer Watermark
-                    </label>
-                    <input
-                      type="text"
-                      value={design.footerText}
-                      onChange={(e) =>
-                        setDesign((d) => ({ ...d, footerText: e.target.value }))
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs"
-                    />
-                  </div>
-                </div>
               </div>
             )}
 
-            {/* 2. TEMPLATES TAB */}
+            {/* 2. TEMPLATES TAB (Page 6) */}
             {activeTab === "templates" && (
               <div className="space-y-3">
-                <p className="text-xs text-slate-400">
-                  Select from 11 purpose-built design systems designed for university announcements:
-                </p>
+                <div className="text-xs text-neutral-500 font-medium">
+                  11 Calibrated KTU Design Presets
+                </div>
 
                 <div className="space-y-2.5">
                   {TEMPLATE_LIBRARY.map((tpl) => {
@@ -548,32 +609,32 @@ function PosterStudioInner() {
                       <div
                         key={tpl.id}
                         onClick={() => setSelectedTemplateId(tpl.id)}
-                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
                           isSelected
-                            ? "bg-white/[0.1] border-[#FF3355] shadow-lg shadow-rose-950/40"
-                            : "bg-black/30 border-white/5 hover:bg-white/[0.04] hover:border-white/10"
+                            ? "bg-[#FDF2F4] border-[#E94359] shadow-xs"
+                            : "bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div
                             style={{ background: tpl.bgGradient }}
-                            className="w-9 h-9 rounded-xl border border-white/20 shrink-0 shadow"
+                            className="w-8 h-8 rounded-lg border border-neutral-200 shrink-0 shadow-xs"
                           />
                           <div>
-                            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <div className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
                               <span>{tpl.name}</span>
-                              <span className="text-[10px] font-normal text-slate-400">
+                              <span className="text-[10px] font-normal text-neutral-400">
                                 ({tpl.styleName})
                               </span>
                             </div>
-                            <div className="text-[10px] text-slate-400 line-clamp-1">
+                            <div className="text-[10px] text-neutral-500 line-clamp-1">
                               {tpl.description}
                             </div>
                           </div>
                         </div>
 
                         {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-[#FF3355] flex items-center justify-center text-white shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-[#E94359] flex items-center justify-center text-white shrink-0">
                             <Check size={12} />
                           </div>
                         )}
@@ -589,9 +650,9 @@ function PosterStudioInner() {
               <div className="space-y-5">
                 {/* Font Scaling */}
                 <div>
-                  <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+                  <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
                     <span>Title Font Size Scale</span>
-                    <span className="font-mono">
+                    <span className="font-mono text-neutral-500">
                       {Math.round(design.fontSizeScale * 100)}%
                     </span>
                   </div>
@@ -607,13 +668,14 @@ function PosterStudioInner() {
                         fontSizeScale: parseFloat(e.target.value),
                       }))
                     }
-                    className="w-full accent-[#FF3355] cursor-pointer"
+                    onMouseUp={() => pushState(design)}
+                    className="w-full accent-[#E94359] cursor-pointer"
                   />
                 </div>
 
                 {/* Text Alignment */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                     Text Alignment
                   </label>
                   <div className="flex gap-2">
@@ -621,17 +683,17 @@ function PosterStudioInner() {
                       <button
                         key={align}
                         onClick={() =>
-                          setDesign((d) => ({ ...d, textAlign: align }))
+                          pushState({ ...design, textAlign: align })
                         }
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize flex items-center justify-center gap-1.5 border transition-all ${
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold capitalize flex items-center justify-center gap-1.5 border transition-all ${
                           design.textAlign === align
-                            ? "bg-[#FF3355] text-white border-[#FF3355]"
-                            : "bg-black/40 text-slate-400 border-white/5 hover:text-white"
+                            ? "bg-[#E94359] text-white border-[#E94359]"
+                            : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
                         }`}
                       >
-                        {align === "left" && <AlignLeft size={14} />}
-                        {align === "center" && <AlignCenter size={14} />}
-                        {align === "right" && <AlignRight size={14} />}
+                        {align === "left" && <AlignLeft size={13} />}
+                        {align === "center" && <AlignCenter size={13} />}
+                        {align === "right" && <AlignRight size={13} />}
                         <span>{align}</span>
                       </button>
                     ))}
@@ -640,7 +702,7 @@ function PosterStudioInner() {
 
                 {/* Logo Placement */}
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                     KTU Crest Placement
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -655,12 +717,12 @@ function PosterStudioInner() {
                       <button
                         key={p.id}
                         onClick={() =>
-                          setDesign((d) => ({ ...d, logoPlacement: p.id }))
+                          pushState({ ...design, logoPlacement: p.id })
                         }
-                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all text-center ${
                           design.logoPlacement === p.id
-                            ? "bg-white/[0.12] text-white border-white/30 shadow-md"
-                            : "bg-black/40 text-slate-400 border-white/5 hover:text-white"
+                            ? "bg-neutral-900 text-white border-neutral-900"
+                            : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
                         }`}
                       >
                         {p.label}
@@ -669,15 +731,15 @@ function PosterStudioInner() {
                   </div>
                 </div>
 
-                {/* Custom Background Image Upload */}
-                <div className="pt-3 border-t border-white/[0.06] space-y-2">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Custom Background Image
+                {/* Custom Background Upload */}
+                <div className="pt-3 border-t border-neutral-100 space-y-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                    Custom Texture / Background
                   </label>
-                  <div className="flex items-center gap-3">
-                    <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/60 border border-dashed border-white/20 text-xs font-semibold text-slate-300 hover:text-white hover:border-white/40 cursor-pointer transition-colors">
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 border border-dashed border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 cursor-pointer transition-colors">
                       <Upload size={14} />
-                      <span>Upload Texture / Image</span>
+                      <span>Upload Texture</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -689,12 +751,9 @@ function PosterStudioInner() {
                     {design.customBackgroundImage && (
                       <button
                         onClick={() =>
-                          setDesign((d) => ({
-                            ...d,
-                            customBackgroundImage: null,
-                          }))
+                          pushState({ ...design, customBackgroundImage: null })
                         }
-                        className="px-3 py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold hover:bg-rose-500/30 transition-colors"
+                        className="px-3 py-2 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold hover:bg-neutral-200"
                       >
                         Clear
                       </button>
@@ -706,6 +765,89 @@ function PosterStudioInner() {
           </div>
         </div>
       </div>
+
+      {/* ── EXPORT MODAL (Page 7) ── */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-neutral-900/40 backdrop-blur-xs"
+            onClick={() => setShowExportModal(false)}
+          />
+
+          <div className="relative z-10 w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900">
+                  Export Poster Asset
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  Select your desired file format for social sharing
+                </p>
+              </div>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                onClick={() => handleDownload("png")}
+                disabled={isExporting}
+                className="w-full p-3.5 rounded-xl border border-neutral-200 hover:border-[#E94359] hover:bg-[#FDF2F4] transition-all flex items-center justify-between text-left group"
+              >
+                <div>
+                  <div className="text-xs font-bold text-neutral-900 group-hover:text-[#E94359]">
+                    PNG — High Quality (Recommended)
+                  </div>
+                  <div className="text-[11px] text-neutral-500">
+                    Lossless crisp typography for Instagram & WhatsApp
+                  </div>
+                </div>
+                <FileImage size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
+              </button>
+
+              <button
+                onClick={() => handleDownload("jpeg")}
+                disabled={isExporting}
+                className="w-full p-3.5 rounded-xl border border-neutral-200 hover:border-[#E94359] hover:bg-[#FDF2F4] transition-all flex items-center justify-between text-left group"
+              >
+                <div>
+                  <div className="text-xs font-bold text-neutral-900 group-hover:text-[#E94359]">
+                    JPEG — Optimized
+                  </div>
+                  <div className="text-[11px] text-neutral-500">
+                    Small file size for fast mobile messaging
+                  </div>
+                </div>
+                <FileImage size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
+              </button>
+
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="w-full p-3.5 rounded-xl border border-neutral-200 hover:border-[#E94359] hover:bg-[#FDF2F4] transition-all flex items-center justify-between text-left group"
+              >
+                <div>
+                  <div className="text-xs font-bold text-neutral-900 group-hover:text-[#E94359]">
+                    PDF — Print Ready
+                  </div>
+                  <div className="text-[11px] text-neutral-500">
+                    High resolution document for physical notice boards
+                  </div>
+                </div>
+                <Download size={18} className="text-neutral-400 group-hover:text-[#E94359]" />
+              </button>
+            </div>
+
+            <div className="pt-2 text-center text-[11px] text-neutral-400">
+              Format: {POSTER_FORMATS[selectedFormat].label}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -714,8 +856,8 @@ export default function PosterStudioPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-96">
-          <RefreshCw className="animate-spin text-rose-500" size={32} />
+        <div className="flex items-center justify-center h-96 text-neutral-400 text-xs">
+          Loading Studio...
         </div>
       }
     >

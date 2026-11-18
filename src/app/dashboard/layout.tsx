@@ -10,10 +10,10 @@ export default function DashboardLayout({
 }) {
   return (
     <MobileNavProvider>
-      <div className="flex h-screen overflow-hidden bg-transparent">
+      <div className="flex h-screen overflow-hidden bg-[#FAF9F6]">
         <Suspense
           fallback={
-            <aside className="hidden md:block w-64 h-screen border-r border-white/5 bg-black/40 shrink-0" />
+            <aside className="hidden md:block w-[240px] h-screen border-r border-neutral-200 bg-white shrink-0" />
           }
         >
           <Sidebar />
@@ -22,14 +22,16 @@ export default function DashboardLayout({
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
           <Suspense
             fallback={
-              <header className="h-16 bg-black/40 border-b border-white/5 shrink-0" />
+              <header className="h-16 bg-[#FAF9F6] border-b border-neutral-200 shrink-0" />
             }
           >
             <Header />
           </Suspense>
 
-          <main className="flex-1 overflow-y-auto relative z-10 scroll-smooth">
-            {children}
+          <main className="flex-1 overflow-y-auto relative z-10 scroll-smooth px-4 sm:px-8 py-6">
+            <div className="max-w-[1540px] mx-auto w-full">
+              {children}
+            </div>
           </main>
         </div>
       </div>

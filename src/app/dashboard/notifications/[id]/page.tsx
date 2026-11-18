@@ -155,8 +155,8 @@ function NotificationDetailContent({ params }: Props) {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-20 text-center text-white/60">
-        <RefreshCw size={26} className="animate-spin mx-auto mb-3 text-[#FF3355]" />
+      <div className="max-w-6xl mx-auto px-6 py-20 text-center text-neutral-500">
+        <RefreshCw size={26} className="animate-spin mx-auto mb-3 text-[#E94359]" />
         Loading notification intelligence...
       </div>
     )
@@ -167,8 +167,8 @@ function NotificationDetailContent({ params }: Props) {
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <Link
-          href="/dashboard/notifications"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-white/60 hover:text-white transition-colors"
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition-colors"
         >
           <ArrowLeft size={16} />
           Back to notifications
@@ -180,16 +180,16 @@ function NotificationDetailContent({ params }: Props) {
             size="sm"
             onClick={() => runExtraction(notification?.title || "", notification?.description || "")}
             disabled={extracting}
-            className="h-9 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] border border-white/10 hover:border-white/20 text-slate-200 text-xs font-semibold gap-1.5 backdrop-blur-xl transition-all duration-300"
+            className="h-9 px-4 rounded-xl bg-white hover:bg-neutral-50 active:scale-[0.98] border border-neutral-200 text-neutral-700 text-xs font-semibold gap-1.5 transition-all shadow-sm"
           >
-            <RefreshCw size={13} className={extracting ? "animate-spin text-[#FF3355]" : ""} />
+            <RefreshCw size={13} className={extracting ? "animate-spin text-[#E94359]" : ""} />
             Re-run AI Extract
           </Button>
 
           <Button
             onClick={handleProceedToStudio}
             size="sm"
-            className="h-9 px-5 rounded-2xl bg-gradient-to-r from-[#FF2E4D] to-[#E00028] hover:from-[#FF4D68] hover:to-[#FF1F42] text-white text-xs gap-2 font-semibold shadow-xl shadow-rose-600/30 border border-white/20 active:scale-[0.98] transition-all duration-300"
+            className="h-9 px-5 rounded-xl bg-[#E94359] hover:bg-[#D83248] text-white text-xs gap-2 font-semibold shadow-sm active:scale-[0.98] transition-all"
           >
             <Layers size={14} />
             Generate Poster
@@ -197,45 +197,45 @@ function NotificationDetailContent({ params }: Props) {
         </div>
       </div>
 
-      {/* 2-Column Glassmorphism Split */}
+      {/* 2-Column Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Scraped Notification Source */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-7 shadow-2xl space-y-5">
+          <div className="rounded-3xl bg-white border border-neutral-200/80 p-7 shadow-sm space-y-5">
             <div>
-              <span className="text-[11px] uppercase tracking-wider font-extrabold text-[#FF3355]">
+              <span className="text-[11px] uppercase tracking-wider font-extrabold text-[#E94359]">
                 Raw Scraped Feed
               </span>
-              <h2 className="text-xl font-extrabold text-white mt-1.5 leading-snug">
+              <h2 className="text-xl font-extrabold text-[#242424] mt-1.5 leading-snug">
                 {notification?.title}
               </h2>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-semibold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
                 Status: {notification?.status || "ready"}
               </span>
-              <span className="text-xs text-white/50 flex items-center gap-1.5 ml-1">
+              <span className="text-xs text-neutral-500 flex items-center gap-1.5 ml-1">
                 <Calendar size={12} />
                 Published: {notification?.published_date || "Recent"}
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-slate-200 mb-2">Original Content</p>
-              <div className="text-xs text-slate-300 leading-relaxed p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] whitespace-pre-line backdrop-blur-md">
+              <p className="text-xs font-semibold text-neutral-700 mb-2">Original Content</p>
+              <div className="text-xs text-neutral-600 leading-relaxed p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 whitespace-pre-line">
                 {notification?.description || "No extended body text was scraped with this notification."}
               </div>
             </div>
 
             {/* Official Attachments */}
-            <div className="pt-3 border-t border-white/[0.08] space-y-2.5">
+            <div className="pt-3 border-t border-neutral-100 space-y-2.5">
               {notification?.pdf_url && (
                 <a
                   href={notification.pdf_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-red-500/10 hover:bg-red-500/15 text-xs font-semibold text-rose-300 border border-red-500/20 transition-all duration-300 active:scale-[0.98]"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 border border-rose-200 transition-all active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-2">
                     <FileText size={16} /> Official PDF Attachment
@@ -249,7 +249,7 @@ function NotificationDetailContent({ params }: Props) {
                   href={notification.original_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-slate-200 border border-white/[0.06] hover:border-white/15 transition-all duration-300 active:scale-[0.98]"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-neutral-50 hover:bg-neutral-100 text-xs font-semibold text-neutral-700 border border-neutral-200 transition-all active:scale-[0.98]"
                 >
                   <span>View KTU Web Source</span>
                   <ExternalLink size={14} />
@@ -261,26 +261,26 @@ function NotificationDetailContent({ params }: Props) {
 
         {/* Right Column: AI Extraction & Verification Form */}
         <div className="lg:col-span-7">
-          <div className="rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-7 shadow-2xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+          <div className="rounded-3xl bg-white border border-neutral-200/80 p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>
                 <div className="flex items-center gap-2">
-                  <Sparkles size={17} className="text-[#FF3355]" />
-                  <h3 className="text-lg font-bold text-white">
+                  <Sparkles size={17} className="text-[#E94359]" />
+                  <h3 className="text-lg font-bold text-[#242424]">
                     AI Extraction & Poster Fields
                   </h3>
                 </div>
-                <p className="text-xs text-slate-300 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                   Fine-tune structured elements before rendering onto the live poster canvas.
                 </p>
               </div>
 
               {aiData.requires_review ? (
-                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-semibold inline-flex items-center gap-1.5 w-fit">
+                <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold inline-flex items-center gap-1.5 w-fit">
                   <AlertTriangle size={13} /> Needs Review
                 </span>
               ) : (
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-semibold inline-flex items-center gap-1.5 w-fit">
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold inline-flex items-center gap-1.5 w-fit">
                   <CheckCircle2 size={13} /> AI Verified
                 </span>
               )}
@@ -289,7 +289,7 @@ function NotificationDetailContent({ params }: Props) {
             <div className="space-y-4">
               {/* Poster Title */}
               <div>
-                <label className="block text-xs font-semibold text-slate-200 mb-2">
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
                   Poster Main Title
                 </label>
                 <input
@@ -297,33 +297,33 @@ function NotificationDetailContent({ params }: Props) {
                   value={aiData.main_title}
                   onChange={(e) => setAiData({ ...aiData, main_title: e.target.value })}
                   placeholder="Concise poster title..."
-                  className="w-full px-4 py-2.5 text-xs text-white placeholder:text-white/40 bg-white/[0.03] focus:bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-300"
+                  className="w-full px-4 py-2.5 text-xs text-[#242424] placeholder:text-neutral-400 bg-neutral-50 focus:bg-white border border-neutral-200 focus:border-[#E94359] rounded-xl focus:outline-none transition-colors"
                 />
               </div>
 
               {/* Course & Semester row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-200 mb-2">
+                  <label className="block text-xs font-semibold text-neutral-700 mb-2">
                     Course / Branch
                   </label>
                   <input
                     type="text"
                     value={aiData.department_or_course}
                     onChange={(e) => setAiData({ ...aiData, department_or_course: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs text-white bg-white/[0.03] focus:bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-300"
+                    className="w-full px-4 py-2.5 text-xs text-[#242424] bg-neutral-50 focus:bg-white border border-neutral-200 focus:border-[#E94359] rounded-xl focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-200 mb-2">
+                  <label className="block text-xs font-semibold text-neutral-700 mb-2">
                     Semester
                   </label>
                   <input
                     type="text"
                     value={aiData.semester}
                     onChange={(e) => setAiData({ ...aiData, semester: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs text-white bg-white/[0.03] focus:bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-300"
+                    className="w-full px-4 py-2.5 text-xs text-[#242424] bg-neutral-50 focus:bg-white border border-neutral-200 focus:border-[#E94359] rounded-xl focus:outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -331,13 +331,13 @@ function NotificationDetailContent({ params }: Props) {
               {/* Important Dates */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-200">
+                  <label className="text-xs font-semibold text-neutral-700">
                     Important Dates
                   </label>
                   <button
                     type="button"
                     onClick={addDate}
-                    className="text-xs text-rose-400 hover:text-rose-300 font-semibold inline-flex items-center gap-1 transition-colors"
+                    className="text-xs text-[#E94359] hover:text-[#D83248] font-semibold inline-flex items-center gap-1 transition-colors"
                   >
                     <Plus size={12} /> Add Date
                   </button>
@@ -350,26 +350,26 @@ function NotificationDetailContent({ params }: Props) {
                         value={date}
                         onChange={(e) => handleDateChange(idx, e.target.value)}
                         placeholder="e.g. 24 April 2026 - First Examination"
-                        className="flex-1 px-4 py-2 text-xs text-white bg-white/[0.03] focus:bg-white/[0.07] border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none transition-all duration-300"
+                        className="flex-1 px-4 py-2 text-xs text-[#242424] bg-neutral-50 focus:bg-white border border-neutral-200 focus:border-[#E94359] rounded-xl focus:outline-none transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => removeDate(idx)}
-                        className="p-2 text-white/40 hover:text-rose-400 rounded-xl hover:bg-white/[0.05] transition-colors"
+                        className="p-2 text-neutral-400 hover:text-rose-600 rounded-lg hover:bg-neutral-100 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
                   {aiData.important_dates.length === 0 && (
-                    <p className="text-xs text-white/40 italic">No dates detected. Click Add Date if needed.</p>
+                    <p className="text-xs text-neutral-400 italic">No dates detected. Click Add Date if needed.</p>
                   )}
                 </div>
               </div>
 
               {/* Deadline */}
               <div>
-                <label className="block text-xs font-semibold text-slate-200 mb-2">
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
                   Last Date / Submission Deadline
                 </label>
                 <input
@@ -377,15 +377,15 @@ function NotificationDetailContent({ params }: Props) {
                   value={aiData.deadlines}
                   onChange={(e) => setAiData({ ...aiData, deadlines: e.target.value })}
                   placeholder="e.g. 28th November 2026"
-                  className="w-full px-4 py-2.5 text-xs text-white bg-white/[0.03] focus:bg-white/[0.07] backdrop-blur-xl border border-white/[0.08] focus:border-rose-500/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-300"
+                  className="w-full px-4 py-2.5 text-xs text-[#242424] bg-neutral-50 focus:bg-white border border-neutral-200 focus:border-[#E94359] rounded-xl focus:outline-none transition-colors"
                 />
               </div>
 
               {/* Action Button */}
-              <div className="pt-5 border-t border-white/[0.08] flex justify-end">
+              <div className="pt-5 border-t border-neutral-100 flex justify-end">
                 <Button
                   onClick={handleProceedToStudio}
-                  className="h-11 px-6 rounded-2xl bg-gradient-to-r from-[#FF2E4D] to-[#E00028] hover:from-[#FF4D68] hover:to-[#FF1F42] text-white font-semibold shadow-xl shadow-rose-600/30 border border-white/20 text-xs gap-2 active:scale-[0.98] transition-all duration-300"
+                  className="h-11 px-6 rounded-xl bg-[#E94359] hover:bg-[#D83248] text-white font-semibold shadow-sm text-xs gap-2 active:scale-[0.98] transition-all"
                 >
                   <Layers size={16} />
                   Proceed to Poster Studio
