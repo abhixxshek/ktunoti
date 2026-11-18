@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import {
   Download,
   RotateCcw,
@@ -21,6 +22,9 @@ import {
   Shapes,
   Image as ImageIcon,
   Wand2,
+  ChevronDown,
+  X,
+  ArrowLeft,
 } from "lucide-react"
 import {
   BTECH_CATEGORIES,
@@ -88,6 +92,7 @@ function PosterStudioInner() {
   const [zoom, setZoom] = useState<number>(1)
   const [activeTool, setActiveTool] = useState<"templates" | "text" | "elements" | "colors" | "branding">("templates")
   const [activeTab, setActiveTab] = useState<"content" | "templates" | "styling">("content")
+  const [mobileSheetOpen, setMobileSheetOpen] = useState<boolean>(false)
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [savedStatus, setSavedStatus] = useState<boolean>(true)
   const [globalLogoSaved, setGlobalLogoSaved] = useState<boolean>(false)
@@ -119,84 +124,60 @@ function PosterStudioInner() {
       customBackgroundImage: null,
       customLogo: savedLogo || "/logo.png",
       logoPlacement: "top-right",
+      badgePlacement: "top-left",
     }
   })
 
-  // Load saved default logo on client mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedLogo = localStorage.getItem("ktu_default_logo")
-      if (savedLogo) {
-        setDesign((prev) => ({ ...prev, customLogo: savedLogo }))
-      } else {
-        setDesign((prev) => ({ ...prev, customLogo: "/logo.png" }))
-      }
-    }
-  }, [])
-
-  // History stack for Undo / Redo
+  // Undo / Redo history stack
   const [history, setHistory] = useState<PosterDesignState[]>([design])
   const [historyIndex, setHistoryIndex] = useState(0)
 
-  const pushState = (newDesign: PosterDesignState) => {
+  const pushState = (next: PosterDesignState) => {
     const updated = history.slice(0, historyIndex + 1)
-    setHistory([...updated, newDesign])
-    setHistoryIndex(updated.length)
-    setDesign(newDesign)
+    updated.push(next)
+    setHistory(updated)
+    setHistoryIndex(updated.length - 1)
+    setDesign(next)
     setSavedStatus(false)
     setTimeout(() => setSavedStatus(true), 800)
   }
 
   const handleUndo = () => {
     if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1)
-      setDesign(history[historyIndex - 1])
+      const prev = historyIndex - 1
+      setHistoryIndex(prev)
+      setDesign(history[prev])
     }
   }
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1)
-      setDesign(history[historyIndex + 1])
+      const next = historyIndex + 1
+      setHistoryIndex(next)
+      setDesign(history[next])
     }
   }
 
-  // Synchronize when searchParams update
+  // Update design if query parameters change
   useEffect(() => {
     const t = searchParams.get("title")
-    if (t) {
-      const c = searchParams.get("category")
-      const r = resolveKtuCategoryAndTemplate(c, t)
-      const savedLogo =
-        typeof window !== "undefined"
-          ? localStorage.getItem("ktu_default_logo")
-          : null
+    const c = searchParams.get("category")
+    const s = searchParams.get("semester")
+    const r = searchParams.get("ref")
+    const m = searchParams.get("malayalam")
+    const tpl = searchParams.get("template")
 
-      const newD: PosterDesignState = {
-        title: t,
-        malayalamSubtitle: searchParams.get("malayalam") || "",
-        description: "",
-        category: r.category,
-        importantDate: "",
-        deadline: "",
-        examDate: "",
-        semester: searchParams.get("semester") || "",
-        academicYear: "",
-        officialReference: searchParams.get("ref") || "",
-        sourceText: "Official Notification • ktunotes.in",
-        footerText: "APJ Abdul Kalam Technological University",
-        fontSizeScale: 1.0,
-        textAlign: "left", // Always left-aligned
-        accentColorOverride: "",
-        cardBgOverride: "",
-        customBackgroundImage: null,
-        customLogo: savedLogo || "/logo.png",
-        logoPlacement: "top-right",
-      }
-      setDesign(newD)
-      setSelectedTemplateId(searchParams.get("template") || r.templateId || "corporate-blue")
-      setHistory([newD])
-      setHistoryIndex(0)
+    if (t || c || s || r || m || tpl) {
+      const res = resolveKtuCategoryAndTemplate(c, t)
+      setDesign((prev) => ({
+        ...prev,
+        title: t || prev.title,
+        category: (c as BTechCategory) || res.category,
+        semester: s || prev.semester,
+        officialReference: r || prev.officialReference,
+        malayalamSubtitle: m || prev.malayalamSubtitle,
+      }))
+      if (tpl) setSelectedTemplateId(tpl)
     }
   }, [searchParams])
 
@@ -218,7 +199,7 @@ function PosterStudioInner() {
     const updated: PosterDesignState = {
       ...design,
       fontSizeScale: optimalScale,
-      textAlign: "left", // Left-aligned per user specification
+      textAlign: "left",
       logoPlacement: "top-right",
     }
     pushState(updated)
@@ -321,17 +302,383 @@ function PosterStudioInner() {
     }
   }
 
+  // Shared inspector tab content for desktop panel and mobile bottom sheet
+  const renderInspectorContent = () => (
+    <div className="space-y-4">
+      {/* 1. CONTENT TAB */}
+      {activeTab === "content" && (
+        <div className="space-y-4">
+          {/* AI Improve Layout Button */}
+          <button
+            onClick={handleAiImproveLayout}
+            className="w-full h-10 px-4 rounded-[10px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] text-[13px] font-semibold flex items-center justify-center gap-2 border border-[#F8C6CD] transition-colors active:scale-[0.98]"
+          >
+            <Wand2 size={15} />
+            <span>AI Improve Layout</span>
+          </button>
+
+          {/* Category Dropdown */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+              B.Tech Category
+            </label>
+            <select
+              value={design.category}
+              onChange={(e) => {
+                const newCat = e.target.value as BTechCategory
+                pushState({ ...design, category: newCat })
+              }}
+              className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+            >
+              {BTECH_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Headline Textarea */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-neutral-700">
+                Announcement Headline
+              </label>
+              <span className="text-[11px] text-neutral-400 font-medium">
+                Left-aligned · Vertically centered
+              </span>
+            </div>
+            <textarea
+              rows={4}
+              value={design.title}
+              onChange={(e) =>
+                setDesign((d) => ({ ...d, title: e.target.value }))
+              }
+              onBlur={() => pushState(design)}
+              className="w-full p-3 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] leading-relaxed focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+              placeholder="Enter announcement headline..."
+            />
+          </div>
+
+          {/* Malayalam Subtitle */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+              Malayalam Subtitle (Optional)
+            </label>
+            <input
+              type="text"
+              value={design.malayalamSubtitle}
+              onChange={(e) =>
+                setDesign((d) => ({
+                  ...d,
+                  malayalamSubtitle: e.target.value,
+                }))
+              }
+              onBlur={() => pushState(design)}
+              className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+              placeholder="മലയാളം അടിക്കുറിപ്പ്..."
+            />
+          </div>
+
+          {/* Semester & Reference */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                Semester
+              </label>
+              <input
+                type="text"
+                value={design.semester}
+                onChange={(e) =>
+                  setDesign((d) => ({ ...d, semester: e.target.value }))
+                }
+                onBlur={() => pushState(design)}
+                className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+                placeholder="e.g. S6"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                KTU Ref (Optional)
+              </label>
+              <input
+                type="text"
+                value={design.officialReference}
+                onChange={(e) =>
+                  setDesign((d) => ({
+                    ...d,
+                    officialReference: e.target.value,
+                  }))
+                }
+                onBlur={() => pushState(design)}
+                className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-mono focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+                placeholder="e.g. KTU/EX-II/..."
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. TEMPLATES TAB */}
+      {activeTab === "templates" && (
+        <div className="space-y-3">
+          <div className="text-xs text-neutral-500 font-medium">
+            11 University Presets (Default: Corporate Blue)
+          </div>
+
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {TEMPLATE_LIBRARY.map((tpl) => {
+              const isSelected = selectedTemplateId === tpl.id
+              return (
+                <div
+                  key={tpl.id}
+                  onClick={() => setSelectedTemplateId(tpl.id)}
+                  className={`p-3 rounded-[10px] border cursor-pointer transition-all flex items-center justify-between ${
+                    isSelected
+                      ? "bg-[#FDF2F4] border-[#E94359] shadow-xs"
+                      : "bg-white border-[#E5E5E5] hover:border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      style={{ background: tpl.bgGradient }}
+                      className="size-8 rounded-[8px] border border-neutral-200 shrink-0 shadow-xs"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-[#242424] flex items-center gap-1.5 truncate">
+                        <span>{tpl.name}</span>
+                        <span className="text-[10px] font-normal text-neutral-400">
+                          ({tpl.styleName})
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-neutral-500 truncate">
+                        {tpl.description}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="size-5 rounded-full bg-[#E94359] flex items-center justify-center text-white shrink-0 ml-2">
+                      <Check size={12} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. STYLING & BRAND TAB */}
+      {activeTab === "styling" && (
+        <div className="space-y-4">
+          {/* Dedicated Logo Management Section */}
+          <div className="p-3.5 sm:p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-[#242424]">
+                  University / Channel Logo
+                </h4>
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  Emblem displayed on poster
+                </p>
+              </div>
+              {globalLogoSaved && (
+                <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                  <Check size={12} /> Set for all
+                </span>
+              )}
+            </div>
+
+            {/* Logo Preview & Upload */}
+            <div className="p-2.5 sm:p-3 rounded-[8px] bg-white border border-[#E5E5E5] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={design.customLogo || "/logo.png"}
+                  alt="Current logo"
+                  className="h-9 w-auto max-w-[80px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
+                />
+                <div className="text-xs truncate">
+                  <div className="font-semibold text-[#242424] truncate">
+                    {design.customLogo && design.customLogo !== "/logo.png"
+                      ? "Custom Uploaded Logo"
+                      : "KSU GECI (Default Emblem)"}
+                  </div>
+                  <div className="text-[10px] text-neutral-400">
+                    Active emblem
+                  </div>
+                </div>
+              </div>
+
+              <label className="h-8 px-3 rounded-[8px] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold cursor-pointer inline-flex items-center justify-center transition-colors shrink-0">
+                <span>Change</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Global Persistence Buttons */}
+            {design.customLogo && design.customLogo !== "/logo.png" && (
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={handleSetLogoAsDefault}
+                  className="flex-1 h-8 px-2.5 rounded-[8px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] border border-[#F8C6CD] text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors truncate"
+                >
+                  <Check size={12} />
+                  <span>Set as logo for all posters</span>
+                </button>
+
+                <button
+                  onClick={handleResetLogo}
+                  className="h-8 px-3 rounded-[8px] bg-neutral-200/80 hover:bg-neutral-300 text-neutral-700 text-xs font-medium transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Font Scaling */}
+          <div>
+            <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
+              <span>Title Font Size Scale</span>
+              <span className="font-mono text-neutral-500">
+                {Math.round(design.fontSizeScale * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.75"
+              max="1.3"
+              step="0.05"
+              value={design.fontSizeScale}
+              onChange={(e) =>
+                setDesign((d) => ({
+                  ...d,
+                  fontSizeScale: parseFloat(e.target.value),
+                }))
+              }
+              onMouseUp={() => pushState(design)}
+              className="w-full accent-[#E94359] cursor-pointer"
+            />
+          </div>
+
+          {/* Text Alignment */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+              Text Alignment
+            </label>
+            <div className="flex gap-2">
+              {(["left", "center", "right"] as const).map((align) => (
+                <button
+                  key={align}
+                  onClick={() =>
+                    pushState({ ...design, textAlign: align })
+                  }
+                  className={`flex-1 h-9 rounded-[8px] text-xs font-semibold capitalize flex items-center justify-center gap-1.5 border transition-all ${
+                    design.textAlign === align
+                      ? "bg-[#E94359] text-white border-[#E94359]"
+                      : "bg-white text-neutral-600 border-[#E5E5E5] hover:bg-neutral-50"
+                  }`}
+                >
+                  {align === "left" && <AlignLeft size={13} />}
+                  {align === "center" && <AlignCenter size={13} />}
+                  {align === "right" && <AlignRight size={13} />}
+                  <span>{align}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Logo Placement */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+              Logo Placement
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { id: "top-right", label: "Top Right" },
+                  { id: "top-left", label: "Top Left" },
+                  { id: "bottom-right", label: "Bottom Badge" },
+                  { id: "hidden", label: "Hidden" },
+                ] as const
+              ).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() =>
+                    pushState({ ...design, logoPlacement: p.id })
+                  }
+                  className={`h-9 px-3 rounded-[8px] text-xs font-semibold border transition-all text-center ${
+                    design.logoPlacement === p.id
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "bg-white text-neutral-600 border-[#E5E5E5] hover:bg-neutral-50"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Background Texture */}
+          <div className="pt-2 border-t border-neutral-100 space-y-2">
+            <label className="block text-xs font-semibold text-neutral-700">
+              Custom Texture / Background
+            </label>
+            <div className="flex items-center gap-2">
+              <label className="flex-1 flex items-center justify-center gap-2 h-10 px-3 rounded-[10px] bg-neutral-50 border border-dashed border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 cursor-pointer transition-colors">
+                <Upload size={14} />
+                <span>Upload Texture</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBackgroundUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {design.customBackgroundImage && (
+                <button
+                  onClick={() =>
+                    pushState({ ...design, customBackgroundImage: null })
+                  }
+                  className="h-10 px-3 rounded-[10px] bg-neutral-100 text-neutral-700 text-xs font-semibold hover:bg-neutral-200 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
-    <div className="flex flex-col h-[calc(100vh-5.5rem)] w-full">
-      {/* ── TOP APPLICATION BAR (40px Standard Controls) ── */}
-      <div className="flex items-center justify-between gap-3 px-5 py-2.5 rounded-xl bg-white border border-[#E5E5E5] mb-4 shrink-0 shadow-xs">
+    <div className="flex flex-col h-full lg:h-[calc(100vh-5.5rem)] w-full pb-14 md:pb-0">
+      {/* ── TOP APPLICATION BAR (Responsive Standard Controls) ── */}
+      <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white border border-[#E5E5E5] mb-3 sm:mb-4 shrink-0 shadow-xs">
         {/* Left: Brand / Title */}
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-sm text-[#242424] tracking-tight">
-            KTU Notify Studio
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/dashboard"
+            className="md:hidden size-8 inline-flex items-center justify-center rounded-[8px] text-neutral-500 hover:bg-neutral-100 transition-colors"
+            aria-label="Back to announcements"
+          >
+            <ArrowLeft size={16} />
+          </Link>
+
+          <span className="font-bold text-xs sm:text-sm text-[#242424] tracking-tight">
+            KTU Studio
           </span>
-          <span className="text-neutral-300">|</span>
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+          <span className="text-neutral-300 hidden sm:inline">|</span>
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-neutral-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span className="font-medium text-neutral-700">
               {savedStatus ? "Saved" : "Saving..."}
@@ -361,9 +708,9 @@ function PosterStudioInner() {
         </div>
 
         {/* Right: History & Direct PNG Export Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Undo / Redo */}
-          <div className="flex items-center gap-1 mr-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 mr-0.5 sm:mr-1">
             <button
               onClick={handleUndo}
               disabled={historyIndex === 0}
@@ -371,7 +718,7 @@ function PosterStudioInner() {
               title="Undo"
               aria-label="Undo"
             >
-              <RotateCcw size={15} />
+              <RotateCcw size={14} />
             </button>
             <button
               onClick={handleRedo}
@@ -380,7 +727,7 @@ function PosterStudioInner() {
               title="Redo"
               aria-label="Redo"
             >
-              <RotateCw size={15} />
+              <RotateCw size={14} />
             </button>
           </div>
 
@@ -388,17 +735,18 @@ function PosterStudioInner() {
           <button
             onClick={handleExportPng}
             disabled={isExporting}
-            className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-semibold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs sm:text-[13px] font-semibold shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
           >
             <Download size={14} className={isExporting ? "animate-bounce" : ""} />
-            <span>{isExporting ? "Exporting PNG..." : "Export poster (PNG) ↓"}</span>
+            <span className="hidden sm:inline">{isExporting ? "Exporting PNG..." : "Export poster (PNG) ↓"}</span>
+            <span className="sm:hidden">{isExporting ? "Exporting..." : "Export PNG"}</span>
           </button>
         </div>
       </div>
 
-      {/* ── 3-PART CREATIVE WORKSPACE ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-        {/* 1. LEFT TOOLBAR RAIL */}
+      {/* ── WORKSPACE ── */}
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-3 sm:gap-4 min-h-0 overflow-hidden">
+        {/* 1. LEFT TOOLBAR RAIL (Desktop Only) */}
         <div className="hidden lg:flex lg:col-span-1 flex-col items-center py-4 bg-white rounded-xl border border-[#E5E5E5] shadow-xs space-y-3">
           {[
             { id: "templates", label: "Templates", icon: Layers, tab: "templates" },
@@ -429,29 +777,29 @@ function PosterStudioInner() {
           })}
         </div>
 
-        {/* 2. CENTER CANVAS */}
-        <div className="lg:col-span-7 flex flex-col items-center justify-center p-4 sm:p-8 rounded-xl bg-neutral-100/70 border border-[#E5E5E5] relative overflow-y-auto overflow-x-hidden shadow-xs studio-canvas-bg">
+        {/* 2. CENTER CANVAS (Fluid Scaling on Both Mobile & Desktop) */}
+        <div className="flex-1 lg:col-span-7 flex flex-col items-center justify-center p-3 sm:p-6 md:p-8 rounded-xl bg-neutral-100/70 border border-[#E5E5E5] relative overflow-y-auto overflow-x-hidden shadow-xs studio-canvas-bg min-h-[300px]">
           {/* Top Canvas Bar */}
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-[8px] text-[10px] font-bold uppercase bg-white/95 backdrop-blur-xs border border-[#E5E5E5] text-neutral-700 shadow-xs">
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex items-center gap-2">
+            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-[6px] sm:rounded-[8px] text-[9px] sm:text-[10px] font-bold uppercase bg-white/95 backdrop-blur-xs border border-[#E5E5E5] text-neutral-700 shadow-xs">
               {currentTemplate.name}
             </span>
-            <span className="text-[11px] text-neutral-500 font-mono hidden sm:inline">
+            <span className="text-[10px] sm:text-[11px] text-neutral-500 font-mono hidden sm:inline">
               {POSTER_FORMATS[selectedFormat].width} ×{" "}
               {POSTER_FORMATS[selectedFormat].height}
             </span>
           </div>
 
           {/* Zoom controls */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-xs p-1 rounded-[8px] border border-[#E5E5E5] shadow-xs text-xs text-neutral-600">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-0.5 sm:gap-1 bg-white/95 backdrop-blur-xs p-1 rounded-[8px] border border-[#E5E5E5] shadow-xs text-xs text-neutral-600">
             <button
               onClick={() => setZoom((z) => Math.max(0.6, z - 0.1))}
               className="p-1 rounded hover:bg-neutral-100"
               title="Zoom out"
             >
-              <ZoomOut size={14} />
+              <ZoomOut size={13} />
             </button>
-            <span className="w-10 text-center font-mono font-semibold text-[11px]">
+            <span className="w-8 sm:w-10 text-center font-mono font-semibold text-[10px] sm:text-[11px]">
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -459,19 +807,19 @@ function PosterStudioInner() {
               className="p-1 rounded hover:bg-neutral-100"
               title="Zoom in"
             >
-              <ZoomIn size={14} />
+              <ZoomIn size={13} />
             </button>
             <button
               onClick={() => setZoom(1)}
               className="p-1 rounded hover:bg-neutral-100"
               title="Fit"
             >
-              <Maximize2 size={13} />
+              <Maximize2 size={12} />
             </button>
           </div>
 
           {/* Actual Live Rendered Poster */}
-          <div className="my-auto w-full flex items-center justify-center py-6">
+          <div className="my-auto w-full flex items-center justify-center py-2 sm:py-6">
             <PosterCanvasPreview
               template={currentTemplate}
               formatKey={selectedFormat}
@@ -481,8 +829,8 @@ function PosterStudioInner() {
           </div>
         </div>
 
-        {/* 3. RIGHT PROPERTIES INSPECTOR */}
-        <div className="lg:col-span-4 flex flex-col rounded-xl bg-white border border-[#E5E5E5] shadow-xs overflow-hidden">
+        {/* 3. RIGHT PROPERTIES INSPECTOR (Desktop Full Panel) */}
+        <div className="hidden lg:flex lg:col-span-4 flex-col rounded-xl bg-white border border-[#E5E5E5] shadow-xs overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-neutral-100 bg-neutral-50/50">
             {[
@@ -509,363 +857,131 @@ function PosterStudioInner() {
             })}
           </div>
 
-          {/* Tab Panes */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            {/* 1. CONTENT TAB */}
-            {activeTab === "content" && (
-              <div className="space-y-4">
-                {/* AI Improve Layout Button */}
-                <button
-                  onClick={handleAiImproveLayout}
-                  className="w-full h-10 px-4 rounded-[10px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] text-[13px] font-semibold flex items-center justify-center gap-2 border border-[#F8C6CD] transition-colors active:scale-[0.98]"
-                >
-                  <Wand2 size={15} />
-                  <span>AI Improve Layout</span>
-                </button>
-
-                {/* Category Dropdown */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    B.Tech Category
-                  </label>
-                  <select
-                    value={design.category}
-                    onChange={(e) => {
-                      const newCat = e.target.value as BTechCategory
-                      pushState({ ...design, category: newCat })
-                    }}
-                    className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
-                  >
-                    {BTECH_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Headline Textarea (Left-aligned & vertically centered in preview) */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-neutral-700">
-                      Announcement Headline
-                    </label>
-                    <span className="text-[11px] text-neutral-400 font-medium">
-                      Left-aligned · Vertically centered
-                    </span>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={design.title}
-                    onChange={(e) =>
-                      setDesign((d) => ({ ...d, title: e.target.value }))
-                    }
-                    onBlur={() => pushState(design)}
-                    className="w-full p-3 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] leading-relaxed focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
-                    placeholder="Enter announcement headline..."
-                  />
-                </div>
-
-                {/* Malayalam Subtitle */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    Malayalam Subtitle (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={design.malayalamSubtitle}
-                    onChange={(e) =>
-                      setDesign((d) => ({
-                        ...d,
-                        malayalamSubtitle: e.target.value,
-                      }))
-                    }
-                    onBlur={() => pushState(design)}
-                    className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
-                    placeholder="മലയാളം അടിക്കുറിപ്പ്..."
-                  />
-                </div>
-
-                {/* Semester & Reference */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                      Semester
-                    </label>
-                    <input
-                      type="text"
-                      value={design.semester}
-                      onChange={(e) =>
-                        setDesign((d) => ({ ...d, semester: e.target.value }))
-                      }
-                      onBlur={() => pushState(design)}
-                      className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
-                      placeholder="e.g. S6"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                      KTU Ref (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={design.officialReference}
-                      onChange={(e) =>
-                        setDesign((d) => ({
-                          ...d,
-                          officialReference: e.target.value,
-                        }))
-                      }
-                      onBlur={() => pushState(design)}
-                      className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-mono focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
-                      placeholder="e.g. KTU/EX-II/..."
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 2. TEMPLATES TAB */}
-            {activeTab === "templates" && (
-              <div className="space-y-3">
-                <div className="text-xs text-neutral-500 font-medium">
-                  11 Calibrated KTU Design Presets (Default: Corporate Blue)
-                </div>
-
-                <div className="space-y-2">
-                  {TEMPLATE_LIBRARY.map((tpl) => {
-                    const isSelected = selectedTemplateId === tpl.id
-                    return (
-                      <div
-                        key={tpl.id}
-                        onClick={() => setSelectedTemplateId(tpl.id)}
-                        className={`p-3 rounded-[10px] border cursor-pointer transition-all flex items-center justify-between ${
-                          isSelected
-                            ? "bg-[#FDF2F4] border-[#E94359] shadow-xs"
-                            : "bg-white border-[#E5E5E5] hover:border-neutral-300 hover:bg-neutral-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            style={{ background: tpl.bgGradient }}
-                            className="size-8 rounded-[8px] border border-neutral-200 shrink-0 shadow-xs"
-                          />
-                          <div>
-                            <div className="text-xs font-bold text-[#242424] flex items-center gap-1.5">
-                              <span>{tpl.name}</span>
-                              <span className="text-[10px] font-normal text-neutral-400">
-                                ({tpl.styleName})
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-neutral-500 line-clamp-1">
-                              {tpl.description}
-                            </div>
-                          </div>
-                        </div>
-
-                        {isSelected && (
-                          <div className="size-5 rounded-full bg-[#E94359] flex items-center justify-center text-white shrink-0">
-                            <Check size={12} />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 3. STYLING & BRAND TAB */}
-            {activeTab === "styling" && (
-              <div className="space-y-5">
-                {/* Dedicated Logo Management Section */}
-                <div className="p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-[#242424]">
-                        University / Channel Logo
-                      </h4>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">
-                        Customize the emblem displayed on the poster
-                      </p>
-                    </div>
-                    {globalLogoSaved && (
-                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                        <Check size={12} /> Set for all
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Logo Preview & Upload */}
-                  <div className="p-3 rounded-[8px] bg-white border border-[#E5E5E5] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={design.customLogo || "/logo.png"}
-                        alt="Current logo"
-                        className="h-10 w-auto max-w-[100px] object-contain rounded bg-neutral-50 p-1 border border-neutral-200"
-                      />
-                      <div className="text-xs truncate">
-                        <div className="font-semibold text-[#242424] truncate">
-                          {design.customLogo && design.customLogo !== "/logo.png"
-                            ? "Custom Uploaded Logo"
-                            : "KSU GECI (Default Emblem)"}
-                        </div>
-                        <div className="text-[11px] text-neutral-400">
-                          Active emblem on poster
-                        </div>
-                      </div>
-                    </div>
-
-                    <label className="h-8 px-3 rounded-[8px] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold cursor-pointer inline-flex items-center justify-center transition-colors shrink-0">
-                      <span>Change logo</span>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/svg+xml"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  {/* Global Persistence Buttons */}
-                  {design.customLogo && design.customLogo !== "/logo.png" && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={handleSetLogoAsDefault}
-                        className="flex-1 h-8 px-3 rounded-[8px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] border border-[#F8C6CD] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Check size={13} />
-                        <span>Set as logo for all posters</span>
-                      </button>
-
-                      <button
-                        onClick={handleResetLogo}
-                        className="h-8 px-3 rounded-[8px] bg-neutral-200/80 hover:bg-neutral-300 text-neutral-700 text-xs font-medium transition-colors"
-                      >
-                        Reset
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Font Scaling */}
-                <div>
-                  <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
-                    <span>Title Font Size Scale</span>
-                    <span className="font-mono text-neutral-500">
-                      {Math.round(design.fontSizeScale * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.75"
-                    max="1.3"
-                    step="0.05"
-                    value={design.fontSizeScale}
-                    onChange={(e) =>
-                      setDesign((d) => ({
-                        ...d,
-                        fontSizeScale: parseFloat(e.target.value),
-                      }))
-                    }
-                    onMouseUp={() => pushState(design)}
-                    className="w-full accent-[#E94359] cursor-pointer"
-                  />
-                </div>
-
-                {/* Text Alignment */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    Text Alignment
-                  </label>
-                  <div className="flex gap-2">
-                    {(["left", "center", "right"] as const).map((align) => (
-                      <button
-                        key={align}
-                        onClick={() =>
-                          pushState({ ...design, textAlign: align })
-                        }
-                        className={`flex-1 h-9 rounded-[8px] text-xs font-semibold capitalize flex items-center justify-center gap-1.5 border transition-all ${
-                          design.textAlign === align
-                            ? "bg-[#E94359] text-white border-[#E94359]"
-                            : "bg-white text-neutral-600 border-[#E5E5E5] hover:bg-neutral-50"
-                        }`}
-                      >
-                        {align === "left" && <AlignLeft size={13} />}
-                        {align === "center" && <AlignCenter size={13} />}
-                        {align === "right" && <AlignRight size={13} />}
-                        <span>{align}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Logo Placement */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    Logo Placement
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        { id: "top-right", label: "Top Right" },
-                        { id: "top-left", label: "Top Left" },
-                        { id: "bottom-right", label: "Bottom Badge" },
-                        { id: "hidden", label: "Hidden" },
-                      ] as const
-                    ).map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() =>
-                          pushState({ ...design, logoPlacement: p.id })
-                        }
-                        className={`h-9 px-3 rounded-[8px] text-xs font-semibold border transition-all text-center ${
-                          design.logoPlacement === p.id
-                            ? "bg-neutral-900 text-white border-neutral-900"
-                            : "bg-white text-neutral-600 border-[#E5E5E5] hover:bg-neutral-50"
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom Background Texture */}
-                <div className="pt-3 border-t border-neutral-100 space-y-2">
-                  <label className="block text-xs font-semibold text-neutral-700">
-                    Custom Texture / Background
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <label className="flex-1 flex items-center justify-center gap-2 h-10 px-3 rounded-[10px] bg-neutral-50 border border-dashed border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100 cursor-pointer transition-colors">
-                      <Upload size={14} />
-                      <span>Upload Texture</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBackgroundUpload}
-                        className="hidden"
-                      />
-                    </label>
-
-                    {design.customBackgroundImage && (
-                      <button
-                        onClick={() =>
-                          pushState({ ...design, customBackgroundImage: null })
-                        }
-                        className="h-10 px-3 rounded-[10px] bg-neutral-100 text-neutral-700 text-xs font-semibold hover:bg-neutral-200 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Desktop Tab Panes */}
+          <div className="flex-1 overflow-y-auto p-5">
+            {renderInspectorContent()}
           </div>
         </div>
       </div>
+
+      {/* ── MOBILE BOTTOM TOOL RAIL (Touch Friendly Toolbar) ── */}
+      <div className="lg:hidden mt-2 p-1 rounded-xl bg-white border border-[#E5E5E5] shadow-xs flex items-center justify-around shrink-0">
+        {[
+          { id: "content", label: "Content", icon: Sliders },
+          { id: "templates", label: "Templates", icon: Layers },
+          { id: "styling", label: "Styling & Brand", icon: Palette },
+        ].map((tool) => {
+          const Icon = tool.icon
+          const active = activeTab === tool.id && mobileSheetOpen
+          return (
+            <button
+              key={tool.id}
+              onClick={() => {
+                setActiveTab(tool.id as any)
+                setMobileSheetOpen(true)
+              }}
+              className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-[8px] text-xs font-semibold transition-all ${
+                active
+                  ? "bg-[#E94359] text-white shadow-xs"
+                  : "text-neutral-600 hover:text-[#242424] hover:bg-neutral-50"
+              }`}
+            >
+              <Icon size={14} />
+              <span>{tool.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── MOBILE SLIDE-UP BOTTOM SHEET DRAWER ── */}
+      {mobileSheetOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-neutral-950/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="w-full bg-white rounded-t-2xl border-t border-[#E5E5E5] shadow-2xl max-h-[75vh] flex flex-col animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sheet Handle & Header */}
+            <div className="pt-2.5 pb-2 px-4 border-b border-neutral-100 flex flex-col gap-2">
+              <div className="w-10 h-1 rounded-full bg-neutral-300 mx-auto" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-[#242424]">
+                    {activeTab === "content"
+                      ? "Edit Content"
+                      : activeTab === "templates"
+                      ? "Choose Template"
+                      : "Styling & Branding"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {/* Format Selector inside mobile sheet */}
+                  <div className="flex items-center gap-1 bg-neutral-100 p-0.5 rounded-[8px]">
+                    {(Object.keys(POSTER_FORMATS) as PosterFormatKey[]).map((fKey) => (
+                      <button
+                        key={fKey}
+                        onClick={() => setSelectedFormat(fKey)}
+                        className={`h-6 px-2 rounded-[6px] text-[10px] font-semibold transition-all ${
+                          selectedFormat === fKey
+                            ? "bg-white text-[#242424] shadow-xs"
+                            : "text-neutral-500"
+                        }`}
+                      >
+                        {POSTER_FORMATS[fKey].shortLabel}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setMobileSheetOpen(false)}
+                    className="size-8 rounded-[8px] hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 inline-flex items-center justify-center transition-colors ml-1"
+                    aria-label="Close sheet"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub-tabs inside sheet */}
+              <div className="flex gap-1 bg-neutral-100/70 p-1 rounded-[8px]">
+                {[
+                  { id: "content", label: "Content" },
+                  { id: "templates", label: "Templates" },
+                  { id: "styling", label: "Styling" },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id as any)}
+                    className={`flex-1 h-7 rounded-[6px] text-xs font-semibold transition-all ${
+                      activeTab === t.id
+                        ? "bg-white text-[#242424] shadow-xs"
+                        : "text-neutral-500 hover:text-neutral-800"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sheet Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 pb-6">
+              {renderInspectorContent()}
+            </div>
+
+            {/* Done / Collapse Button at bottom of sheet */}
+            <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 flex justify-end">
+              <button
+                onClick={() => setMobileSheetOpen(false)}
+                className="w-full h-10 rounded-[10px] bg-[#242424] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Check size={14} />
+                <span>Apply & View Canvas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

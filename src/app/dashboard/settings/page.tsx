@@ -85,17 +85,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-16">
       {/* Header */}
       <div>
         <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#E94359] uppercase tracking-wider mb-1">
           <Settings size={14} />
           <span>System & Brand Preferences</span>
         </div>
-        <h1 className="text-2xl sm:text-[28px] font-bold text-[#242424] tracking-tight leading-tight">
+        <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-[#242424] tracking-tight leading-tight">
           Studio Brand Settings
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-xs sm:text-sm text-neutral-500 mt-1">
           Configure university attribution, default social media formats, AI extraction providers, and publication webhooks.
         </p>
       </div>
@@ -107,15 +107,15 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={handleSave} className="space-y-4 sm:space-y-6">
         {/* 1. University & Channel Branding */}
-        <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-5">
+        <div className="p-4 sm:p-6 md:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-4 sm:space-y-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
             <Building2 size={17} className="text-[#E94359]" />
             <span>Identity & Channel Watermark</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
                 University / Organization Name
@@ -148,13 +148,13 @@ export default function SettingsPage() {
         </div>
 
         {/* 2. Global University Logo (Applied to All Posters) */}
-        <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-4">
+        <div className="p-4 sm:p-6 md:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
             <ImageIcon size={17} className="text-[#E94359]" />
             <span>Default Logo for All Posters</span>
           </div>
 
-          <div className="p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] flex items-center justify-between gap-4">
+          <div className="p-3.5 sm:p-4 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <img
                 src={globalLogo || "/logo.png"}
@@ -173,7 +173,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <label className="h-9 px-3.5 rounded-[8px] bg-white border border-[#E5E5E5] hover:bg-neutral-50 text-neutral-700 text-xs font-semibold cursor-pointer inline-flex items-center justify-center transition-colors shadow-xs">
                 <span>{globalLogo ? "Change" : "Upload logo"}</span>
                 <input
@@ -198,7 +198,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 3. Poster Studio Defaults */}
-        <div className="p-6 sm:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-5">
+        <div className="p-4 sm:p-6 md:p-7 rounded-xl bg-white border border-[#E5E5E5] shadow-xs space-y-4 sm:space-y-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#242424] border-b border-neutral-100 pb-3">
             <LayoutTemplate size={17} className="text-[#E94359]" />
             <span>Studio Defaults & Preset Preferences</span>

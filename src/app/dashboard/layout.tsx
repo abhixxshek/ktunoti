@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import Sidebar from "@/components/layout/Sidebar"
 import Header from "@/components/layout/Header"
+import BottomNav from "@/components/layout/BottomNav"
 import { MobileNavProvider } from "@/components/layout/MobileNavContext"
 
 export default function DashboardLayout({
@@ -28,11 +29,16 @@ export default function DashboardLayout({
             <Header />
           </Suspense>
 
-          <main className="flex-1 overflow-y-auto relative z-10 scroll-smooth px-4 sm:px-8 py-6">
+          <main className="flex-1 overflow-y-auto relative z-10 scroll-smooth px-3 sm:px-6 md:px-8 py-4 sm:py-6 pb-20 md:pb-6">
             <div className="max-w-[1540px] mx-auto w-full">
               {children}
             </div>
           </main>
+
+          {/* Mobile Bottom Navigation Bar */}
+          <Suspense fallback={<nav className="fixed bottom-0 inset-x-0 h-15 bg-white/95 md:hidden border-t border-[#E5E5E5]" />}>
+            <BottomNav />
+          </Suspense>
         </div>
       </div>
     </MobileNavProvider>

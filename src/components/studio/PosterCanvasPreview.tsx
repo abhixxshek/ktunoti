@@ -33,12 +33,12 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
 
   const titleSizeClass =
     formatKey === "landscape"
-      ? "text-base sm:text-lg leading-snug"
+      ? "text-sm sm:text-base md:text-lg leading-snug"
       : design.title.length > 125
-      ? "text-base sm:text-lg leading-snug"
+      ? "text-sm sm:text-base md:text-lg leading-snug"
       : design.title.length > 85
-      ? "text-lg sm:text-xl leading-snug"
-      : "text-xl sm:text-2xl leading-tight"
+      ? "text-base sm:text-lg md:text-xl leading-snug"
+      : "text-lg sm:text-xl md:text-2xl leading-tight"
 
   const activePills = [
     { label: "SEMESTER", value: design.semester, urgent: false },
@@ -54,7 +54,7 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
         transform: scale !== 1 ? `scale(${scale})` : undefined,
         transformOrigin: "center center",
       }}
-      className={`w-full max-w-[520px] rounded-[28px] p-4 sm:p-6 shadow-2xl border border-white/15 transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${spec.aspectClass} ${className}`}
+      className={`w-full max-w-[360px] sm:max-w-[480px] lg:max-w-[520px] rounded-[20px] sm:rounded-[28px] p-3 sm:p-6 shadow-2xl border border-white/15 transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${spec.aspectClass} ${className}`}
     >
       <div
         style={{
@@ -63,7 +63,7 @@ export const PosterCanvasPreview: React.FC<PosterCanvasPreviewProps> = ({
           borderColor: template.borderColor,
           textAlign: design.textAlign,
         }}
-        className="w-full h-full rounded-[22px] p-5 sm:p-6 border flex flex-col justify-between shadow-xl relative overflow-hidden backdrop-blur-md"
+        className="w-full h-full rounded-[16px] sm:rounded-[22px] p-3.5 sm:p-6 border flex flex-col justify-between shadow-xl relative overflow-hidden backdrop-blur-md"
       >
         {/* Top Header */}
         <div

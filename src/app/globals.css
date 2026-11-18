@@ -86,3 +86,27 @@ button {
   background-image: radial-gradient(#D5D3CC 1.2px, transparent 1.2px);
   background-size: 20px 20px;
 }
+
+/* Safe area padding utilities for mobile notch and navigation bar */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Hide scrollbars while retaining scrollability on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile tap target utilities */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+  }
+}
