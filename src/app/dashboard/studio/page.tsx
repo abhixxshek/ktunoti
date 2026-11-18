@@ -345,19 +345,46 @@ function PosterStudioInner() {
       {/* 1. CONTENT TAB */}
       {activeTab === "content" && (
         <div className="space-y-4">
+          {/* Poster Aspect Ratio Selector */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-neutral-700">
+              Poster Format / Size
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(POSTER_FORMATS) as PosterFormatKey[]).map((fKey) => {
+                const spec = POSTER_FORMATS[fKey]
+                const active = selectedFormat === fKey
+                return (
+                  <button
+                    key={fKey}
+                    type="button"
+                    onClick={() => setSelectedFormat(fKey)}
+                    className={`h-9 px-2 rounded-[8px] text-xs font-semibold border flex items-center justify-center transition-all ${
+                      active
+                        ? "bg-neutral-900 text-white border-neutral-900 shadow-xs font-bold"
+                        : "bg-white text-neutral-600 border-[#E5E5E5] hover:bg-neutral-50"
+                    }`}
+                  >
+                    <span>{spec.shortLabel}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* AI Improve Layout Button */}
           <button
             onClick={handleAiImproveLayout}
-            className="w-full h-10 px-4 rounded-[10px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] text-[13px] font-semibold flex items-center justify-center gap-2 border border-[#F8C6CD] transition-colors active:scale-[0.98]"
+            className="w-full h-11 px-4 rounded-[10px] bg-[#FDF2F4] hover:bg-[#FCE7EB] text-[#E94359] text-[13px] font-bold flex items-center justify-center gap-2 border border-[#F8C6CD] transition-colors active:scale-[0.98] shadow-2xs"
           >
-            <Wand2 size={15} />
-            <span>AI Improve Layout</span>
+            <Wand2 size={16} />
+            <span>AI Improve Layout & Font Scaling</span>
           </button>
 
           {/* Category Dropdown */}
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              B.Tech Category
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-neutral-700">
+              Notification Category
             </label>
             <select
               value={design.category}
@@ -365,7 +392,7 @@ function PosterStudioInner() {
                 const newCat = e.target.value as BTechCategory
                 pushState({ ...design, category: newCat })
               }}
-              className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+              className="w-full h-11 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all shadow-2xs"
             >
               {BTECH_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -376,15 +403,10 @@ function PosterStudioInner() {
           </div>
 
           {/* Headline Textarea */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-neutral-700">
-                Announcement Headline
-              </label>
-              <span className="text-[11px] text-neutral-400 font-medium">
-                Left-aligned · Vertically centered
-              </span>
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-neutral-700">
+              Announcement Headline
+            </label>
             <textarea
               rows={4}
               value={design.title}
@@ -392,15 +414,15 @@ function PosterStudioInner() {
                 setDesign((d) => ({ ...d, title: e.target.value }))
               }
               onBlur={() => pushState(design)}
-              className="w-full p-3 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] leading-relaxed focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+              className="w-full p-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] leading-relaxed focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all shadow-2xs"
               placeholder="Enter announcement headline..."
             />
           </div>
 
           {/* Malayalam Subtitle */}
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              Malayalam Subtitle (Optional)
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-neutral-700">
+              Malayalam Subtitle <span className="font-normal text-neutral-400">(Optional)</span>
             </label>
             <input
               type="text"
@@ -412,15 +434,15 @@ function PosterStudioInner() {
                 }))
               }
               onBlur={() => pushState(design)}
-              className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+              className="w-full h-11 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all shadow-2xs"
               placeholder="മലയാളം അടിക്കുറിപ്പ്..."
             />
           </div>
 
           {/* Semester & Reference */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-neutral-700">
                 Semester
               </label>
               <input
@@ -430,14 +452,14 @@ function PosterStudioInner() {
                   setDesign((d) => ({ ...d, semester: e.target.value }))
                 }
                 onBlur={() => pushState(design)}
-                className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+                className="w-full h-11 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all shadow-2xs"
                 placeholder="e.g. S6"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                KTU Ref (Optional)
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-neutral-700">
+                KTU Ref <span className="font-normal text-neutral-400">(Optional)</span>
               </label>
               <input
                 type="text"
@@ -449,7 +471,7 @@ function PosterStudioInner() {
                   }))
                 }
                 onBlur={() => pushState(design)}
-                className="w-full h-10 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-mono focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all"
+                className="w-full h-11 px-3.5 rounded-[10px] bg-neutral-50 border border-[#E5E5E5] text-[13px] text-[#242424] font-mono focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 focus:bg-white transition-all shadow-2xs"
                 placeholder="e.g. KTU/EX-II/..."
               />
             </div>
@@ -460,7 +482,7 @@ function PosterStudioInner() {
             /registration/i.test(design.title) ||
             /registration/i.test(design.category) ||
             Boolean(design.withoutFineDate)) && (
-            <div className="p-3.5 rounded-[10px] bg-rose-50/70 border border-rose-200/80 space-y-2 mt-2">
+            <div className="p-4 rounded-[12px] bg-rose-50/70 border border-rose-200 space-y-2.5">
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#E94359]" />
@@ -473,10 +495,10 @@ function PosterStudioInner() {
                     href={pdfUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
                     title="Open official PDF in new tab to check and confirm date"
                   >
-                    <FileText size={12} />
+                    <FileText size={13} />
                     <span>Check PDF</span>
                     <ExternalLink size={10} />
                   </a>
@@ -485,10 +507,10 @@ function PosterStudioInner() {
                     href={sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-[11px] font-bold shadow-2xs transition-colors shrink-0 active:scale-95"
                     title="Open notification source"
                   >
-                    <FileText size={12} />
+                    <FileText size={13} />
                     <span>Check Source</span>
                     <ExternalLink size={10} />
                   </a>
@@ -499,40 +521,40 @@ function PosterStudioInner() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={design.withoutFineDate || ""}
-                  onChange={(e) =>
-                    setDesign((d) => ({
-                      ...d,
-                      withoutFineDate: e.target.value,
-                    }))
-                  }
-                  onBlur={() => pushState(design)}
-                  className="flex-1 h-10 px-3.5 rounded-[8px] bg-white border border-rose-200 text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 transition-all"
-                  placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
-                />
-                {pdfUrl && (
-                  <a
-                    href={pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-10 px-3 rounded-[8px] bg-white hover:bg-rose-100/60 border border-rose-200 text-[#E94359] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shrink-0 shadow-2xs"
-                    title="Open official PDF"
-                  >
-                    <FileText size={14} />
-                    <span className="hidden sm:inline">Open PDF</span>
-                    <ExternalLink size={11} />
-                  </a>
-                )}
-              </div>
+              <input
+                type="text"
+                value={design.withoutFineDate || ""}
+                onChange={(e) =>
+                  setDesign((d) => ({
+                    ...d,
+                    withoutFineDate: e.target.value,
+                  }))
+                }
+                onBlur={() => pushState(design)}
+                className="w-full h-11 px-3.5 rounded-[10px] bg-white border border-rose-200 text-[13px] text-[#242424] font-medium focus:outline-none focus:border-[#E94359] focus:ring-2 focus:ring-[#E94359]/20 transition-all shadow-2xs"
+                placeholder="e.g. 24-11-2026 (Leave empty if not confirmed in PDF)"
+              />
 
-              <p className="text-[11px] text-rose-800/80 leading-tight">
-                Click <strong className="font-semibold text-[#E94359]">Check PDF</strong> to inspect the official circular. Displays on poster only when verified.
+              <p className="text-[11px] text-rose-800/80 leading-relaxed">
+                Tap <strong className="font-semibold text-[#E94359]">Check PDF</strong> above to inspect the circular table, then confirm the date.
               </p>
             </div>
           )}
+
+          {/* Direct Export Poster Action */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setMobileSheetOpen(false)
+                handleExportPng()
+              }}
+              disabled={isExporting}
+              className="w-full h-12 rounded-[12px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-bold shadow-md inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              <Download size={16} className={isExporting ? "animate-bounce" : ""} />
+              <span>{isExporting ? "Exporting PNG Poster..." : "Export Poster (PNG) ↓"}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -582,6 +604,21 @@ function PosterStudioInner() {
                 </div>
               )
             })}
+          </div>
+
+          {/* Direct Export in Templates Tab */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setMobileSheetOpen(false)
+                handleExportPng()
+              }}
+              disabled={isExporting}
+              className="w-full h-11 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-bold shadow-xs inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              <Download size={15} className={isExporting ? "animate-bounce" : ""} />
+              <span>{isExporting ? "Exporting PNG..." : "Export Poster (PNG) ↓"}</span>
+            </button>
           </div>
         </div>
       )}
@@ -770,6 +807,21 @@ function PosterStudioInner() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Direct Export in Styling Tab */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setMobileSheetOpen(false)
+                handleExportPng()
+              }}
+              disabled={isExporting}
+              className="w-full h-11 rounded-[10px] bg-[#E94359] hover:bg-[#D83248] text-white text-[13px] font-bold shadow-xs inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              <Download size={15} className={isExporting ? "animate-bounce" : ""} />
+              <span>{isExporting ? "Exporting PNG..." : "Export Poster (PNG) ↓"}</span>
+            </button>
           </div>
         </div>
       )}
@@ -1030,66 +1082,72 @@ function PosterStudioInner() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet Handle & Header */}
-            <div className="pt-2.5 pb-2 px-4 border-b border-neutral-100 flex flex-col gap-2">
+            <div className="pt-2.5 pb-2.5 px-4 border-b border-neutral-100 bg-white sticky top-0 z-20 flex flex-col gap-2.5">
               <div className="w-10 h-1 rounded-full bg-neutral-300 mx-auto" />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-[#242424]">
+
+              <div className="flex items-center justify-between gap-2">
+                {/* Clear prominent Back to Canvas button */}
+                <button
+                  onClick={() => setMobileSheetOpen(false)}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[9px] bg-neutral-100 hover:bg-neutral-200 text-[#242424] text-xs font-bold transition-all active:scale-95 shrink-0"
+                  aria-label="Back to Canvas"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back</span>
+                </button>
+
+                {/* Center Title & Current Format */}
+                <div className="flex flex-col items-center min-w-0">
+                  <span className="font-bold text-sm text-[#242424] truncate">
                     {activeTab === "content"
                       ? "Edit Content"
                       : activeTab === "templates"
                       ? "Choose Template"
-                      : "Styling & Branding"}
+                      : "Styling & Brand"}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-medium">
+                    {POSTER_FORMATS[selectedFormat].label}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {/* Format Selector inside mobile sheet */}
-                  <div className="flex items-center gap-1 bg-neutral-100 p-0.5 rounded-[8px]">
-                    {(Object.keys(POSTER_FORMATS) as PosterFormatKey[]).map((fKey) => (
-                      <button
-                        key={fKey}
-                        onClick={() => setSelectedFormat(fKey)}
-                        className={`h-6 px-2 rounded-[6px] text-[10px] font-semibold transition-all ${
-                          selectedFormat === fKey
-                            ? "bg-white text-[#242424] shadow-xs"
-                            : "text-neutral-500"
-                        }`}
-                      >
-                        {POSTER_FORMATS[fKey].shortLabel}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setMobileSheetOpen(false)}
-                    className="size-8 rounded-[8px] hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 inline-flex items-center justify-center transition-colors ml-1"
-                    aria-label="Close sheet"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+                {/* Direct Export PNG button in Header */}
+                <button
+                  onClick={() => {
+                    setMobileSheetOpen(false)
+                    handleExportPng()
+                  }}
+                  disabled={isExporting}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[9px] bg-[#E94359] hover:bg-[#D83248] text-white text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                >
+                  <Download size={13} className={isExporting ? "animate-bounce" : ""} />
+                  <span>Export PNG</span>
+                </button>
               </div>
 
               {/* Sub-tabs inside sheet */}
-              <div className="flex gap-1 bg-neutral-100/70 p-1 rounded-[8px]">
+              <div className="flex gap-1.5 bg-neutral-100 p-1 rounded-[10px]">
                 {[
-                  { id: "content", label: "Content" },
-                  { id: "templates", label: "Templates" },
-                  { id: "styling", label: "Styling" },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id as any)}
-                    className={`flex-1 h-7 rounded-[6px] text-xs font-semibold transition-all ${
-                      activeTab === t.id
-                        ? "bg-white text-[#242424] shadow-xs"
-                        : "text-neutral-500 hover:text-neutral-800"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+                  { id: "content", label: "Content", icon: Sliders },
+                  { id: "templates", label: "Templates", icon: Layers },
+                  { id: "styling", label: "Styling", icon: Palette },
+                ].map((t) => {
+                  const Icon = t.icon
+                  const active = activeTab === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setActiveTab(t.id as any)}
+                      className={`flex-1 h-8 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                        active
+                          ? "bg-white text-[#242424] shadow-xs font-bold"
+                          : "text-neutral-500 hover:text-neutral-800"
+                      }`}
+                    >
+                      <Icon size={13} />
+                      <span>{t.label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -1099,13 +1157,13 @@ function PosterStudioInner() {
             </div>
 
             {/* Sheet Footer Actions with direct Export button */}
-            <div className="p-3 border-t border-neutral-100 bg-neutral-50/80 flex items-center gap-2.5 shrink-0">
+            <div className="p-3 border-t border-neutral-100 bg-neutral-50/90 flex items-center gap-2.5 shrink-0">
               <button
                 onClick={() => setMobileSheetOpen(false)}
-                className="flex-1 h-11 rounded-[10px] bg-white border border-[#E5E5E5] text-[#242424] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-neutral-50 active:scale-[0.98]"
+                className="flex-1 h-11 rounded-[10px] bg-white border border-[#E5E5E5] text-[#242424] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-neutral-50 active:scale-[0.98]"
               >
-                <Check size={14} />
-                <span>Done Editing</span>
+                <ArrowLeft size={14} />
+                <span>Back to Canvas</span>
               </button>
 
               <button
