@@ -16,7 +16,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased bg-[#FAF9F6] text-[#242424] min-h-screen relative selection:bg-[#E94359]/15 selection:text-[#E94359] overflow-x-hidden">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased bg-[#FAF9F6] text-[#242424] min-h-screen relative selection:bg-[#E94359]/15 selection:text-[#E94359] overflow-x-hidden font-sans">
         <TooltipProvider delay={150}>
           <ToastProvider>
             {children}

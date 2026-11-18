@@ -41,19 +41,19 @@ export default function Sidebar() {
   }
 
   const renderContent = (isMobile = false) => (
-    <div className="flex flex-col h-full bg-white border-r border-neutral-200/80">
+    <div className="flex flex-col h-full bg-white border-r border-[#E5E5E5]">
       {/* Brand Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#E94359] text-white shrink-0 shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-100">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center size-9 rounded-[10px] bg-[#E94359] text-white shrink-0 shadow-xs">
             <Sparkles size={18} />
           </div>
           {(!collapsed || isMobile) && (
             <div className="overflow-hidden">
-              <p className="text-sm font-bold tracking-tight text-neutral-900 leading-tight">
+              <p className="text-sm font-bold tracking-tight text-[#242424] leading-tight">
                 KTU Notify
               </p>
-              <p className="text-[9px] font-semibold text-neutral-400 tracking-wider uppercase">
+              <p className="text-[10px] font-semibold text-neutral-400 tracking-wider uppercase">
                 Notifications. Reimagined.
               </p>
             </div>
@@ -63,7 +63,7 @@ export default function Sidebar() {
         {isMobile && (
           <button
             onClick={closeMobile}
-            className="p-1.5 text-neutral-500 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
+            className="size-8 inline-flex items-center justify-center text-neutral-500 hover:text-neutral-900 rounded-[8px] hover:bg-neutral-100 transition-colors"
             aria-label="Close menu"
           >
             <X size={18} />
@@ -76,7 +76,7 @@ export default function Sidebar() {
         {/* Workspace Section */}
         <div className="space-y-1">
           {(!collapsed || isMobile) && (
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
               Workspace
             </div>
           )}
@@ -89,11 +89,11 @@ export default function Sidebar() {
                 href={item.href}
                 onClick={isMobile ? closeMobile : undefined}
                 className={cn(
-                  "flex items-center h-10 rounded-xl transition-all duration-150",
+                  "flex items-center h-10 rounded-[10px] border transition-all duration-150 text-[13px]",
                   collapsed ? "justify-center w-full" : "gap-3 px-3",
                   active
-                    ? "bg-[#FDF2F4] text-[#E94359] font-semibold"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                    ? "bg-[#FDF2F4] text-[#E94359] border-[#F8C6CD] font-semibold shadow-xs"
+                    : "text-neutral-600 hover:text-[#242424] hover:bg-neutral-50 border-transparent font-medium"
                 )}
                 title={collapsed ? item.label : undefined}
               >
@@ -102,10 +102,10 @@ export default function Sidebar() {
                   className={cn("shrink-0", active ? "text-[#E94359]" : "text-neutral-500")}
                 />
                 {!collapsed && (
-                  <span className="text-xs truncate flex-1">{item.label}</span>
+                  <span className="truncate flex-1">{item.label}</span>
                 )}
                 {!collapsed && item.badge && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                     {item.badge}
                   </span>
                 )}
@@ -117,7 +117,7 @@ export default function Sidebar() {
         {/* Preferences Section */}
         <div className="space-y-1">
           {(!collapsed || isMobile) && (
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
               Preferences
             </div>
           )}
@@ -130,11 +130,11 @@ export default function Sidebar() {
                 href={item.href}
                 onClick={isMobile ? closeMobile : undefined}
                 className={cn(
-                  "flex items-center h-10 rounded-xl transition-all duration-150",
+                  "flex items-center h-10 rounded-[10px] border transition-all duration-150 text-[13px]",
                   collapsed ? "justify-center w-full" : "gap-3 px-3",
                   active
-                    ? "bg-[#FDF2F4] text-[#E94359] font-semibold"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                    ? "bg-[#FDF2F4] text-[#E94359] border-[#F8C6CD] font-semibold shadow-xs"
+                    : "text-neutral-600 hover:text-[#242424] hover:bg-neutral-50 border-transparent font-medium"
                 )}
                 title={collapsed ? item.label : undefined}
               >
@@ -142,55 +142,41 @@ export default function Sidebar() {
                   size={17}
                   className={cn("shrink-0", active ? "text-[#E94359]" : "text-neutral-500")}
                 />
-                {!collapsed && <span className="text-xs truncate">{item.label}</span>}
+                {!collapsed && <span className="truncate flex-1">{item.label}</span>}
               </Link>
             )
           })}
-
-          <button
-            onClick={() => alert("KTU Notify Studio • Need assistance? Reach out to @KTU_Updates or visit ktunotes.in.")}
-            className={cn(
-              "flex items-center h-10 rounded-xl text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-all duration-150 w-full text-left",
-              collapsed ? "justify-center px-0" : "gap-3 px-3"
-            )}
-            title={collapsed ? "Help & Support" : undefined}
-          >
-            <HelpCircle size={17} className="text-neutral-500 shrink-0" />
-            {!collapsed && <span className="text-xs truncate">Help & Support</span>}
-          </button>
         </div>
       </div>
 
-      {/* User / Workspace Footer */}
+      {/* Footer Profile & Collapse Toggle */}
       <div className="p-3 border-t border-neutral-100 space-y-2">
+        {/* User Card */}
         <div
           className={cn(
-            "flex items-center gap-2.5 p-2 rounded-xl bg-neutral-50 border border-neutral-100",
-            collapsed && "justify-center"
+            "flex items-center rounded-[10px] bg-neutral-50 p-2 border border-neutral-200/60",
+            collapsed ? "justify-center" : "gap-2.5"
           )}
         >
-          <div className="w-7 h-7 rounded-lg bg-[#E94359]/10 text-[#E94359] flex items-center justify-center shrink-0">
-            <User size={14} />
+          <div className="size-8 rounded-[8px] bg-neutral-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+            KT
           </div>
-          {(!collapsed || isMobile) && (
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-neutral-900 truncate">Workspace</p>
-              <p className="text-[10px] text-neutral-500 truncate">Personal account</p>
+          {!collapsed && (
+            <div className="overflow-hidden flex-1 min-w-0">
+              <p className="text-xs font-semibold text-[#242424] truncate">Workspace</p>
+              <p className="text-[11px] text-neutral-400 truncate">Personal account</p>
             </div>
           )}
         </div>
 
+        {/* Collapse toggle (desktop only) */}
         {!isMobile && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={cn(
-              "flex items-center h-8 w-full rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors text-xs",
-              collapsed ? "justify-center" : "gap-2 px-2"
-            )}
-            aria-label="Collapse sidebar"
+            className="w-full h-8 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-[8px] transition-colors text-xs font-medium"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-            {!collapsed && <span>Collapse</span>}
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         )}
       </div>
@@ -199,26 +185,33 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          "hidden md:block sticky top-0 h-screen shrink-0 transition-all duration-200 z-40",
-          collapsed ? "w-[76px]" : "w-[240px]"
+          "hidden md:block shrink-0 sticky top-0 h-screen transition-[width] duration-200 z-30",
+          collapsed ? "w-[72px]" : "w-60"
         )}
       >
         {renderContent(false)}
       </aside>
 
+      {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm"
-            onClick={closeMobile}
-          />
-          <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10">
-            {renderContent(true)}
-          </aside>
-        </div>
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm md:hidden transition-opacity"
+          onClick={closeMobile}
+        />
       )}
+
+      {/* Mobile Slide-Over Drawer */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform transition-transform duration-200 ease-in-out md:hidden shadow-2xl",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {renderContent(true)}
+      </div>
     </>
   )
 }

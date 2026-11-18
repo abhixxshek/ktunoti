@@ -2,33 +2,66 @@
 @import "tw-animate-css";
 
 :root {
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand */
+  --primary: #E94359;
+  --primary-hover: #D83248;
+  --primary-subtle: #FDF2F4;
+  --primary-border: #F8C6CD;
+
+  /* Surfaces */
   --background: #FAF9F6;
-  --foreground: #242424;
   --surface: #FFFFFF;
-  --surface-subtle: #F4F3EF;
-  --muted: #71717A;
-  --muted-light: #A1A1AA;
-  --border: #E4E4E7;
-  --border-light: #F4F4F5;
-  --coral: #E94359;
-  --coral-hover: #D83248;
-  --coral-subtle: #FDF2F4;
-  --radius: 0.875rem;
+  --surface-muted: #F4F4F2;
+  --surface-hover: #F9F9F8;
+
+  /* Text */
+  --text-primary: #242424;
+  --text-secondary: #71717A;
+  --text-muted: #A1A1AA;
+
+  /* Borders */
+  --border: #E5E5E5;
+  --border-subtle: #F0EFEA;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* Control Heights */
+  --control-sm: 32px;
+  --control-md: 40px;
+  --control-lg: 48px;
+
+  /* Fallback aliases for components */
+  --radius: 10px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+html {
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
+  font-family: var(--font-family);
   background-color: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
+  line-height: 1.5;
   overflow-x: hidden;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
 }
 
 /* Subtle sleek scrollbar */
@@ -50,6 +83,6 @@ body {
 /* Studio Canvas Background Pattern */
 .studio-canvas-bg {
   background-color: #F0EFEA;
-  background-image: radial-gradient(#D5D3CC 1px, transparent 1px);
+  background-image: radial-gradient(#D5D3CC 1.2px, transparent 1.2px);
   background-size: 20px 20px;
 }
